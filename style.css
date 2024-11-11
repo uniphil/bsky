@@ -1,0 +1,59 @@
+:root {
+  --c-bg: #f8f8ff;
+  --c-fg: #222;
+  --c-link: #248;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --c-bg: #121214;
+    --c-fg: #b4b4b8;
+    --c-link: #6888ef;
+  }
+}
+body {
+  background: var(--c-bg);
+  color: var(--c-fg);
+}
+a:link, a:visited {
+  color: var(--c-link)
+}
+h1, h2, h3 {
+  font-family: system-ui, sans-serif;
+  margin-top: 1.5em;
+  margin-bottom: 0.5rem;
+}
+h1 + *, h2 + *, h3 + * {
+  margin-top: 0.5rem;
+}
+header h1 {
+  font-size: 1.1em;
+}
+small {
+  font-weight: normal;
+}
+
+.container {
+  max-width: 580px;
+  margin: 1em auto;
+}
+.container.home {
+  max-width: 720px;
+  margin: 1em auto;
+}
+.home-cols {
+  display: flex;
+  flex-direction: row-reverse;
+  gap: 2em;
+}
+@media (max-width: 480px) {
+  .home-cols {
+    flex-direction: column;
+    gap: 1em;
+  }
+}
+.home-cols section {
+  flex: 1 1 auto;
+}
+.home-cols section.projects {
+  flex-basis: 40%;
+}
