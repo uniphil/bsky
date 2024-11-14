@@ -8,11 +8,15 @@
     --c-bg: #121214;
     --c-fg: #b4b4b8;
     --c-link: #6888ef;
+    --c-button-bg: #444;
+    --c-button-fg: #8c8;
+    --c-button-border: #000;
   }
 }
 body {
   background: var(--c-bg);
   color: var(--c-fg);
+  line-height: 1.4;
 }
 a:link, a:visited {
   color: var(--c-link)
@@ -31,14 +35,25 @@ header h1 {
 small {
   font-weight: normal;
 }
+button {
+  background: var(--c-button-bg);
+  border-radius: 4px;
+  border-color: var(--c-button-border);
+  color: var(--c-button-fg);
+  cursor: pointer;
+}
 
 .container {
   max-width: 580px;
-  margin: 1em auto;
+  margin: 1em auto 4em;
 }
 .container.home {
   max-width: 720px;
   margin: 1em auto;
+}
+.container > img {
+  display: block;
+  max-width: 100%;
 }
 .home-cols {
   display: flex;
@@ -51,9 +66,9 @@ small {
     gap: 1em;
   }
 }
-.home-cols section {
-  flex: 1 1 auto;
+.home-cols section.words {
+  flex: 1 1 60%;
 }
 .home-cols section.projects {
-  flex-basis: 40%;
+  flex: 1 1 40%;
 }
