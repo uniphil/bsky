@@ -72,3 +72,8 @@ button {
 .home-cols section.projects {
   flex: 1 1 40%;
 }
+
+pre.notes {
+  max-width: 100%;
+  white-space: pre-wrap;
+}
