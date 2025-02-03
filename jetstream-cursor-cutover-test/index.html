@@ -1,0 +1,31 @@
+<!doctype html>
+<style>
+  body {
+    font-family: monospace;
+  }
+  .nice {
+    color: green;
+  }
+  .hmm {
+    color: darkorange;
+  }
+  .boo {
+    color: red;
+  }
+</style>
+
+<select class="stream">
+  <option value="jetstream1.us-east.bsky.network">jetstream1.us-east.bsky.network</option>
+  <option value="jetstream2.us-east.bsky.network">jetstream2.us-east.bsky.network</option>
+  <option value="jetstream1.us-west.bsky.network">jetstream1.us-west.bsky.network</option>
+  <option value="jetstream2.us-west.bsky.network">jetstream2.us-west.bsky.network</option>
+</select>
+
+<button class="start">start</button>
+<p class="stream-info"></p>
+<p class="tailing"></p>
+<p class="catching"></p>
+
+<pre class="results"></pre>
+
+<script src="./cutover-check.js"></script>
