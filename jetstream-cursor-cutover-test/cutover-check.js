@@ -187,10 +187,13 @@ dt\ttailed event time\tcursor catchup event time`;
     }
   });
 
+  const tail_dups = tail.length - new Set(tail).size;
+  const catchup_dups = catchup.length - new Set(catchup).size;
+
   results.appendChild(classed(`
 
-total from tail:    ${tail.length}. First: ${tail[0]}, last: ${tail[tail.length-1]}
-total from catchup: ${catchup.length}. First: ${catchup[0]}, last: ${catchup[catchup.length-1]}
+total from tail:    ${tail.length}. First: ${tail[0]}, last: ${tail[tail.length-1]}, duplicates: ${tail_dups}
+total from catchup: ${catchup.length}. First: ${catchup[0]}, last: ${catchup[catchup.length-1]}, duplicates: ${catchup_dups}
 
 initial misses: ${misses}
 eventual finds: ${finds} (catchup events that did show up later, after an out-of-order event)
