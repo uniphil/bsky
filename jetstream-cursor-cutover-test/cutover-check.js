@@ -10,7 +10,7 @@ const results = document.querySelector('.results');
 
 let wsTailing, wsCatching; // websockets
 let stream;
-let tail, recovered; // arrays of event time_us
+let tail, catchup; // arrays of event time_us
 
 const CATCH_UP_AFTER_US = 1500000; // presumably must be more than 1s (jetstream's "cutoverThresholdUS")
 const FOLLOW_FOR = 1500000;
@@ -45,7 +45,7 @@ function begin() {
   wsTailing.onmessage = getTime(handleTimeTailing);
 
   tail = [];
-  recovered = null;
+  catchup = null;
   results.textContent = null;
   button.textContent = 'connecting';
 }
@@ -68,7 +68,7 @@ function beginCatchup(first_t) {
   };
   wsCatching.onmessage = getTime(handleTimeCatching, null);
 
-  recovered = [];
+  catchup = [];
 }
 
 const getTime = (then, extra) => message => {
@@ -97,7 +97,7 @@ function handleTimeTailing(t) {
   const dt = t - first_t;
 
   tailingEl.textContent = `tail: now at ${t} (${(dt / 1000000).toFixed(1)})`;
-  if (recovered === null && dt > CATCH_UP_AFTER_US) {
+  if (catchup === null && dt > CATCH_UP_AFTER_US) {
     beginCatchup(first_t);
   } else if (dt > (CATCH_UP_AFTER_US + FOLLOW_FOR)) {
     end(stream);
@@ -105,7 +105,7 @@ function handleTimeTailing(t) {
 }
 
 function handleTimeCatching(t) {
-  recovered.push(t);
+  catchup.push(t);
   catchingEl.textContent = `catchup: now at ${t} (${((tail[tail.length-1] - t) / 1000000).toFixed(1)})`;
 }
 
@@ -126,47 +126,77 @@ function end() {
 
 dt\ttailed event time\tcursor catchup event time`;
 
-  let holdback = 0;
+  let catchup_offset = 0;
+
+  let oks = 0;
   let misses = 0;
+  let finds = 0;
   let disordered = 0;
-  let weirds = 0;
 
   tail.forEach((t, i) => {
     const dt = ((t - start) / 1000000).toFixed(2);
-    const r = recovered[i-holdback];
+    let catchup_i = i - catchup_offset;
+    let c = catchup[catchup_i];
     results.appendChild(document.createElement('br'));
-    if (t === r) {
-      results.appendChild(classed(`${dt}\t${t}\t${r}`, 'nice'));
-    } else if (t < r) {
-      holdback += 1;
-      misses += 1;
+
+    if (t === c) {
+      // normal case: same time_us from tail and catchup
+      results.appendChild(classed(`${dt}\t${t}\t${c}`, 'nice'));
+      oks += 1;
+
+    } else if (c > t) {
+      // catchup time jumped ahead of tail: we probably lost events
+      catchup_offset += 1;
       results.appendChild(classed(`${dt}\t${t}`, 'boo'));
-    } else if ((i-holdback) >= recovered.length) {
-      // r is done
+      misses += 1;
+
+    } else if ((i-catchup_offset) >= catchup.length) {
+      // inconsequential: tail usually receives events first, so it often finishes with one extra
       results.appendChild(classed(`${dt}\t${t}`, 'plain'));
-    } else {
-      if (holdback > 0) holdback -= 1;
-      const weirdDt = ((r - t) / 1000000).toFixed(2);
-      if (tail.slice(0, i+1).includes(r)) {
-        results.appendChild(classed(`${dt}\t${t}\t${r} (${weirdDt})`, 'hmm'));
-        disordered += 1;
-      } else {
-        results.appendChild(classed(`${dt}\t${t}\t${r} (${r - t} ???)`, 'boo'));
-        weirds += 1;
+
+    } else { // c < t
+      // catchup fell *behind* tail: catchup is out of order, or something very weird
+
+      // out-of-order case appears as a "live" event jumping ahead of other catchup events
+      const prev_c = catchup[catchup_i-1];
+      const fell_behind = c < prev_c;
+      if (!fell_behind) {
+        results.appendChild(classed(`ERR: unexpected weird case: catchup fell behind tail but not itself`, 'boo'));
+        throw new Error('weird: catchup fell behind tail but not itself');
       }
+
+      disordered += 1; // single count for each series of disoredered events in catchup
+
+      // roll the catchup events forward until they meet up with tail again
+      while (c < t) {
+        if (!tail.slice(0, i).includes(c)) {
+          results.appendChild(classed(`ERR: unexpected weird case: catchup has an event that we didn't see in tail yet`, 'boo'));
+          throw new Error('weird: catchup had extra event');
+        }
+        results.appendChild(classed(`\t                   \t${c}`, 'hmm'));
+        results.appendChild(document.createElement('br'));
+        finds += 1; // we presumably missed the event before, but found it now.
+
+        catchup_offset -= 1;
+        catchup_i = i - catchup_offset;
+        c = catchup[catchup_i];
+      }
+      // catchup caught up, need to now print the normal case
+      results.appendChild(classed(`${dt}\t${t}\t${c}`, 'nice'));
+
     }
   });
 
   results.appendChild(classed(`
 
-total from tail:   ${tail.length}. First: ${tail[0]}, last: ${tail[tail.length-1]}
-total from cursor: ${recovered.length}. First: ${recovered[0]}, last: ${recovered[recovered.length-1]}
+total from tail:    ${tail.length}. First: ${tail[0]}, last: ${tail[tail.length-1]}
+total from catchup: ${catchup.length}. First: ${catchup[0]}, last: ${catchup[catchup.length-1]}
 
 initial misses: ${misses}
-out of order(?) events: ${disordered}
-weird events: ${weirds}
+eventual finds: ${finds} (catchup events that did show up later, after an out-of-order event)
+out-of-order occurrences: ${disordered}
 
-cursor websocket finished with: ${holdback} events missing
+catchup websocket finished with a ${catchup_offset}-event offset (likely the total count of missed events)
 
 `, 'plain'));
 
