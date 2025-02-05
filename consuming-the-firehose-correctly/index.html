@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>consuming the jetstream firehose correctly | atproto and bluesky</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="things to know about jetstream" />
+    <meta property="og:site_name" content="atproto and bluesky" />
+    <link rel="canonical" href="https://bsky.bad-example.com/consuming-the-firehose-correctly/" />
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1><a href="../">atproto and bluesky</a></h1>
+      </header>
+      <h1>consuming the jetstream firehose correctly</h1>
+      <p>2025-02-04 by <a href="https://bsky.app/profile/bad-example.com" target="_blank" title="bluesky profile: bad-example.com">phil</a> <small>(they/them)</small></p>
+
+      <p><em>status: still a draft, please don't share yet</em></p>
+
+      <p>Some things I've learned through working with <a href="https://github.com/bluesky-social/jetstream">jetstream</a>. This is going to be in-the-weeds and won't matter for a lot of apps!</p>
+
+      <p><strong>If you're making any kind of "sampling" app,</strong> like <a href="https://firesky.tv/">firesky</a>, <a href="https://deletions.bsky.bad-example.com/">final words</a>, <a href="http://www.gitfeed.me/">gitfeed</a>, <a href="https://emojistats.bsky.sh/">emojistats</a>, or <a href="https://skymood.skorfmann.com/">skymood</a>, then <strong>you don't need to read this.</strong> Obviously feel free to, but <a href="/consuming-the-firehose-cheaply/">it's easy and cheap to get going</a>, and you could do that instead. If you can tolerate missing some firehose events, jetstream works very well today.</p>
+
+      <p><strong>If you're making an appview</strong> or any service where you want to reliably receive every event from the firehose, then this post might have some useful information for you.</p>
+
+
+      <h2>ℹ️ The <code>time_us</code> property is jetstream-local</h2>
+
+      <p>Every jetstream event has a <code>time_us</code> property. This is <strong>not</strong> part of the atproto data! Jetstream <a href="https://github.com/bluesky-social/jetstream/blob/ea96859b93d1790ff20bb168e5fc442d462cea1e/pkg/consumer/consumer.go#L350-L352">adds <code>time_us</code> at a late stage</a> during event processing, immediately before it is emitted to connected clients.</p>
+
+      <p>So, measuring <code>time_us</code> against your local clock is mostly measuring network latency + clock skew:</p>
+
+      <img src="./jetstream-cursor-age.png" alt="line chart titled 'jetstream cursor age', spanning about 20 hrs and with a range of 0–15ms. the line noisily varies between about 6 and 10ms most of the time. legend: 'wss://jetstream1.us-east.bsky.network/subscribe'" />
+
+      <p>The main implication to be aware of: you <strong>cannot</strong> use a <code>time_us</code> from one jetstream server to sync events with a different jetstream server and expect seemless continuity. The same events will have different <code>time_us</code>.</p>
+
+      <blockquote>
+        <p>When switching between instances, it may be prudent to rewind your cursor a few seconds for gapless playback if you process events idempotently.</p>
+        <cite>—<a href="https://github.com/bluesky-social/jetstream/tree/ea96859b93d1790ff20bb168e5fc442d462cea1e?tab=readme-ov-file#public-instances">jetstream readme</a></cite>
+      </blockquote>
+
+
+      <h2>✨ The <code>time_us</code> property is a monotonically increasing clock</h2>
+
+      <p>This one is nice! The <code>time_us</code> property for events from a single jetstream instance <a href="https://github.com/bluesky-social/jetstream/blob/ea96859b93d1790ff20bb168e5fc442d462cea1e/pkg/monotonic/clock.go">is supposed to always increase and never repeat</a>. So, if you connect with <code>cursor=:your_last_events_time_us</code>, you should get exactly that last event as the first event for your new connection. so,</p>
+
+      <ul>
+        <li>it <em>should*</em> be safe to increment the cursor by one and reconnect to the same instance.</li>
+        <li>you do shouldn't* need to worry about handling edge cases where multiple events with the same <code>time_us</code> could get replayed on reconnect.</li>
+      </ul>
+
+      <p><small>*see next heading</small></p>
+
+      <p>Note that while it's implemented as monotonic, it's not actually documented as such, and in fact the readme almost implies that it's not:</p>
+
+      <blockquote>
+        <p>When reconnecting, use the time_us from your most recently processed event and maybe provide a negative buffer (i.e. subtract a few seconds) to ensure gapless playback</p>
+        <cite>—<a href="https://github.com/bluesky-social/jetstream/tree/main?tab=readme-ov-file#consuming-jetstream">jetstream readme</a></cite>
+      </blockquote>
+
+
+      <h2>‼️ Jetstream can currently drop and reorder events when reconnecting with a <code>cursor</code></h2>
+
+      <p><a href="https://github.com/bluesky-social/jetstream/issues/42">tracking issue</a></p>
+
+
+
+<pre>
+
+
+############# scratch area / stuff still to write #############
+
+
+- you <em>could</em> work around the cutover problems currently with some client
+  work to open two sockets (tailing + replaying) and figure out the cutover
+  yourself. maybe.
+
+- jetstream also drops events on any persistence error, which might be a case
+  for consuming from multiple jetstream instances
+
+- jetstream uses a parallel scheduler to process events -- does this mean that
+  emitted events might differ in ordering from the upstream relay? if so, this
+  could actually be a pretty big problem.
+
+- problems with out-of-order
+  - a create-then-delete on a record becoming delete-then-create can lead to
+    storing/distributing content that should be deleted.
+  - activate-then-deactivate could be that for a whole account
+  - edge cases around cursors intersecting with your own app persistence: even
+    though jetstream doesnt' appear to emit duplicates, you might get duplicates
+    if you app needs to reconnect based on a cursor that you saved during the
+    cutover glitch, which unfortunately is likely because jetstream often drops
+    you then.
+
+- jetstream won't add the relay sequence number to events (at least according to
+  https://github.com/bluesky-social/jetstream/pull/39 ) so it's not easy to
+  detect problems. (i wish we could have a (relay_seq, jetstream_seq) tuple to
+  insert the additional sequence steps where jetstream_seq is a deterministic
+  counter that increments within a single relay event. then could we have
+  reliable cross-instance cursors?)
+
+</pre>
+
+
+
+
+      <h2>Conclusions</h2>
+
+      <h3>Make your event processing <a href="https://en.wikipedia.org/wiki/Idempotence">idempotent</a> if you can</h3>
+
+      <p>If your system state stays the same whether an event is received once or multiple times, then you might be able to work around some of the consistency problems by conservatively replaying and minding the cutover. This is not always easy to acheive and sometimes subtle.</p>
+
+
+      <h3>Consider self-hosting jetstream</h3>
+
+      <p>The issues around cutover from replay to live-tailing seem likely to be correlated with traffic load on the instance. Self-hosting your own can bring some risks into your own control at least.</p>
+
+
+      <h3>Consider using a relay directly, instead of jetstream, probably</h3>
+
+      <p>Relays offer a sequence number, which plays a similar role to jetstream's <code>cursor</code>: you can keep track of which events you have seen, and resume from where you left off when you reconnect. However, instead of a timestamp, this sequence increments one step for each update, offering more confidence that you really have received every event, and a means to detect when you haven't. Relays also</p>
+
+      <ul>
+        <li>include all necessary data to cryptographically verify each update against the user identity that created it</li>
+        <li>(brain what was the other thing?)</li>
+      </ul>
+
+      <p>The major downside that I am aware of is</p>
+
+      <ul>
+        <li>the full atproto firehose stream <a href="https://jazco.dev/2024/09/24/jetstream/">costs ~100x the bandwidth of jetstream</a>.</li>
+      </ul>
+
+      <p>Jetstream's unfiltered bandwidth requirement is low enough for me to self-host atproto services at home without worrying, but the full atproto relay stream might raise questions from my ISP.</p>
+
+      <p>The full firehose might have its own surprises. The one I know of that's relevant to this post: <a href="https://github.com/bluesky-social/indigo/issues/837">potential off-by-one in the sequence when connecting with a cursor</a> that could lead to duplicating a single event on reconnect if the client isn't careful to check the first event's sequence number. (or missing an event if the client auto-increments the cursor to avoid double-count).</p>
+
+    </div>
+  </body>
+</html>
