@@ -81,3 +81,10 @@ pre.notes {
 hr {
   margin-top: 4em;
 }
+
+.featured {
+/*  background: hsl(280, 50%, 21%);*/
+  margin-left: -0.6em;
+  padding-left: 0.4em;
+  border-left: 0.2em solid hsl(280, 50%, 28%);
+}
