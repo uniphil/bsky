@@ -21,20 +21,45 @@
 
       <p><em>status: draft in progress, please don't share yet</em></p>
 
-      <p>It's <a href="" target="_blank" title="">frequently [todo get this link]</a> <a href="https://dustycloud.org/blog/how-decentralized-is-bluesky/" target="_blank" title="How decentralized is Bluesky really?">stated</a> that some core components in the <a href="https://atproto.com/" target="_blank">AT-Protocol</a> architecture are <em>expensive</em> to host. So expensive that they are out of reach reach except for large or VC-funded corporations like Bluesky PBC. Expensive due to the architecture of atproto. This post will consider the expensive <strong>AppView</strong> component.</p>
+      <p>It's frequently stated<sup>[by who?]</sup> that some core components of the <a href="https://atproto.com/" target="_blank">AT-Protocol</a> architecture are <em>expensive</em> to host and don't scale down. So expensive that they are out of reach reach except for VC-funded commercial companies like Bluesky PBC, and expensive due to the structure of the protocol itself. Very non-decentralized.</p>
 
-      <p>My short answer to "can it scale down" is just: "yes!". Here's my Raspberry Pi 4b, consuming a few watts and pulling around 20GB of <a href="https://github.com/bluesky-social/jetstream" target="_blank">simplified</a> firehose events per day. It's <a href="https://github.com/atcosm/links/tree/main/constellation" target="_blank" title="Constellation: global atproto backlink index">an appview</a> indexing <strong>all</strong> cross-repo references ("backlinks") in the at-mosphere, typically up to 1,500 refs created per second. It stores them in an old SATA SSD connected over USB.</p>
+      <p>We're going to skip past your <strong>Personal Data Server</strong> (PDS; cheap), going to put aside the <strong>Relay</strong> costs for now, and consider Bluesky's expensive <strong>AppView</strong> component.</p>
+
+      <p>And skipping right to the end, my answer to "can it scale down" is just: "yes!". Here's my Raspberry Pi 4b, at home, consuming a few watts and pulling around 20GB of <a href="https://github.com/bluesky-social/jetstream" target="_blank">simplified</a> firehose events per day. It's <a href="https://github.com/atcosm/links/tree/main/constellation" target="_blank" title="Constellation: global atproto backlink index">an AppView</a> indexing <strong>all</strong> cross-repo references (backlinks) in the AT-mosphere, often up to 1,500 created per second. It's closing in on one <em>billion</em> backlinks, eating up an old SATA SSD connected over a salvaged USB adapter.</p>
 
       <ul class="pics">
         <li><img src="./pi-eyes.jpg" alt="a raspberry pi with googly eyes on its USB ports, its red power LED lit, and with ethernet, USB-A (hard drive), and USB-C (power) cables connected." /></li>
         <li><img src="./skyblur-x-constellation.png" alt="screenshot of skyblur.uk post announcing that it uses constellation to fetch like and repost counts. it shows like and repost counts (very meta)." /></li>
       </ul>
 
-      <p>This index can hydrate information about social interactions. <a href="https://skyblur.uk" target="_blank">Skyblur.uk</a> is using it to show the counts of likes, reposts, and replies to a post. It can find Bluesky quote-posts, replies, account followers and blockers; <a href="https://frontpage.fyi/" target="_blank">Frontpage</a> story comments and upvotes, and more.</p>
+      <p>Backlinks can hydrate information about social interactions. <a href="https://skyblur.uk" target="_blank">Skyblur.uk</a> is using the index on this very pi to show the counts of likes, reposts, and replies to a post. The index can tell you about Bluesky quote-posts, replies, account followers and blockers; <a href="https://frontpage.fyi/" target="_blank">Frontpage</a> story comments, upvotes, and so on.</p>
 
-      <p>Obviously this is doing less than Bluesky PBC's appview, but it's a building block that can be part of hosting your own. It's my contention that <strong>read load</strong> primarily drives <a href="https://bsky.app/profile/jaz.bsky.social/post/3lhnm5akc4s25" target="_blank" title="Post from Bluesky developer Jaz confirming that feedgen switched to a push architecture after about 100k users">expensive architectures</a> like Bluesky PBC uses, and that self-hosted architectures for serving (much) less than 31 million clients have cheaper options without sacrificing the big-world globally-connected nature of atproto.</p>
+      <p>Obviously this is doing less than Bluesky PBC's AppView so maybe you're not convinced. But I want to put BlueSky's AppView implementation aside because it's doing a pretty hard thing: serving over 31 million users (read load) with best-in-class feedgen. Our self-host dream doesn't involve that.</p>
 
-      <p>I could probably end it here, but I'm going to use the rest of the space here to outline a decomposition of Bluesky's appview that I believe can be self-hosted at a small scale. If you're more interested in action, <a href="https://www.microcosm.blue/" target="_blank">microcosm</a> is my side-project to actually build it.</p>
+      <p>Our self-host dream <em>does</em> involve handling the same 31M user <em>write load</em> as Bluesky's, but I think this is where the <em>it's expensive</em> critique gets wires crossed: Bluesky's <strong>read</strong> load is what's actually expensive. I have a billion links on a happy raspberry pi.</p>
+
+      <h2>AT-Protocol and the Bluesky AppView</h2>
+
+      <p><em><a href="https://bsky.app/profile/danabra.mov" target="_blank">Dan Abramov</a>'s talk <a href="https://www.youtube.com/watch?v=F1sJW6nTP6E" target="_blank">Web Without Walls</a> is worth a watch if you're new to AT-Protocol.</em></p>
+
+      <img class="im-left" style="width: 40%;" src="./atproto-bsky-flow.jpg" alt="" />
+
+      <p>AT-Protocol has this nice circular (<a href="https://www.youtube.com/watch?v=i__969noyAM" target="_blank">unidirectional</a>!) data flow. Everyone gets their own little personal data repository for their content that's hosted by a <em>PDS</em>, changes are aggregated by a <em>Relay</em>, broadcast to <em>AppViews</em>, which present that content back to you.</p>
+
+      <p>Since the AppView gets the full feed of all data from everyone posting in the world, it can be built as a mostly typical http app backend but with an unusual write path.</p>
+
+
+      <img class="im-right" style="width: calc(60% - 2em);" src="./atproto-ecosystem-flow.jpg" alt="" />
+
+      <p>Bluesky's relay is open, so you can build your own AppView and receive all the global content just by connecting with a websocket. The global content feed is called the <strong>firehose</strong>, and <strong>jetstream</strong> is an awesome firehose adaper that emits simplified JSON.</p>
+
+      <p class="clear">So what's <em>in</em> the Bluesky appview?</p>
+
+      <img class="im-left" style="width: 60%" src="./bsky-appview.jpg" alt="" />
+
+      <p>&hellip;I mean I don't work there, but asdlfkjasldkjflklaksdfjlkasdjf i need a break</p>
+
+      <p class="clear"><span style="text-decoration: line-through wavy;">I could probably end it here, but I'm going to use the rest of the space here to outline a decomposition of Bluesky's appview that I believe can be self-hosted at a small scale. If you're more interested in action, <a href="https://www.microcosm.blue/" target="_blank">microcosm</a> is my side-project to actually build it.</span></p>
 
       <h2>Event log, the "shared heap"</h2>
 
@@ -60,7 +85,11 @@
 
       <h2>Other notes</h2>
 
+      <p><a href="https://dustycloud.org/blog/how-decentralized-is-bluesky/" target="_blank" title="How decentralized is Bluesky really?">the best atproto critque i know of, and a few points of which this post tries to disprove</a></p>
+
       <p>I share concern for the risk that Bluesky poses to decentralized social media. If Bluesky PBC fails, it's not yet clear if the AT-Protocol could survive. Obviously I hope so. ActivityPub and especially the work being done by <a href="https://www.spritely.institute/" target="_blank">Spritely Institute</a> offer resilient decentralized alternatives without single-entity capture, and it's my hope that as people leave the billionaire-owned commercial platforms, the wider ecosystem of protocols can grow, not just atproto.</p>
+
+      <p>credible exit</p>
     </div>
   </body>
 </html>

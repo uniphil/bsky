@@ -107,3 +107,17 @@ ul.pics img {
 /*  display: block;*/
   max-width: 100%;
 }
+
+.im-left {
+  display: block;
+  float: left;
+  margin: 0 1em 1em 0;
+}
+.im-right {
+  display: block;
+  float: right;
+  margin: 0 0 1em 1em;
+}
+.clear {
+  clear: both;
+}
