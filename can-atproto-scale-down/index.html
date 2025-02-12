@@ -2,10 +2,12 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>can atproto scale down? | atproto and bluesky</title>
+    <title>Can atproto scale down? | atproto and bluesky</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="" />
+    <meta name="description" content="Decomposing the Bluesky appview, and self-hosting the pieces" />
     <meta property="og:site_name" content="atproto and bluesky" />
+    <meta property="og:title" content="Can atproto scale down?" />
+    <meta property="og:image" content="https://bsky.bad-example.com/can-atproto-scale-down/pi-eyes.jpg" />
     <link rel="canonical" href="https://bsky.bad-example.com/can-atproto-scale-down/" />
     <link rel="stylesheet" href="../style.css" />
   </head>
@@ -14,12 +16,51 @@
       <header>
         <h1><a href="../">atproto and bluesky</a></h1>
       </header>
-      <h1>can atproto scale down?</h1>
-      <p>2024-11-30 by <a href="https://bsky.app/profile/bad-example.com" target="_blank" title="bluesky profile: bad-example.com">phil</a> <small>(they/them)</small></p>
+      <h1>Can atproto scale down?</h1>
+      <p>2025-02-12 by <a href="https://bsky.app/profile/bad-example.com" target="_blank" title="bluesky profile: bad-example.com">phil</a> <small>(they/them)</small></p>
 
-      <p><em>work in progress</em></p>
+      <p><em>status: draft in progress, please don't share yet</em></p>
 
+      <p>It's <a href="" target="_blank" title="">frequently [todo get this link]</a> <a href="https://dustycloud.org/blog/how-decentralized-is-bluesky/" target="_blank" title="How decentralized is Bluesky really?">stated</a> that some core components in the <a href="https://atproto.com/" target="_blank">AT-Protocol</a> architecture are <em>expensive</em> to host. So expensive that they are out of reach reach except for large or VC-funded corporations like Bluesky PBC. Expensive due to the architecture of atproto. This post will consider the expensive <strong>AppView</strong> component.</p>
 
+      <p>My short answer to "can it scale down" is just: "yes!". Here's my Raspberry Pi 4b, consuming a few watts and pulling around 20GB of <a href="https://github.com/bluesky-social/jetstream" target="_blank">simplified</a> firehose events per day. It's <a href="https://github.com/atcosm/links/tree/main/constellation" target="_blank" title="Constellation: global atproto backlink index">an appview</a> indexing <strong>all</strong> cross-repo references ("backlinks") in the at-mosphere, typically up to 1,500 refs created per second. It stores them in an old SATA SSD connected over USB.</p>
+
+      <ul class="pics">
+        <li><img src="./pi-eyes.jpg" alt="a raspberry pi with googly eyes on its USB ports, its red power LED lit, and with ethernet, USB-A (hard drive), and USB-C (power) cables connected." /></li>
+        <li><img src="./skyblur-x-constellation.png" alt="screenshot of skyblur.uk post announcing that it uses constellation to fetch like and repost counts. it shows like and repost counts (very meta)." /></li>
+      </ul>
+
+      <p>This index can hydrate information about social interactions. <a href="https://skyblur.uk" target="_blank">Skyblur.uk</a> is using it to show the counts of likes, reposts, and replies to a post. It can find Bluesky quote-posts, replies, account followers and blockers; <a href="https://frontpage.fyi/" target="_blank">Frontpage</a> story comments and upvotes, and more.</p>
+
+      <p>Obviously this is doing less than Bluesky PBC's appview, but it's a building block that can be part of hosting your own. It's my contention that <strong>read load</strong> primarily drives <a href="https://bsky.app/profile/jaz.bsky.social/post/3lhnm5akc4s25" target="_blank" title="Post from Bluesky developer Jaz confirming that feedgen switched to a push architecture after about 100k users">expensive architectures</a> like Bluesky PBC uses, and that self-hosted architectures for serving (much) less than 31 million clients have cheaper options without sacrificing the big-world globally-connected nature of atproto.</p>
+
+      <p>I could probably end it here, but I'm going to use the rest of the space here to outline a decomposition of Bluesky's appview that I believe can be self-hosted at a small scale. If you're more interested in action, <a href="https://www.microcosm.blue/" target="_blank">microcosm</a> is my side-project to actually build it.</p>
+
+      <h2>Event log, the "shared heap"</h2>
+
+      <p>todo</p>
+
+      <h2>Bluesky's AppView</h2>
+
+      <p>todo</p>
+
+      <h2>Small services that work together</h2>
+
+      <p>todo</p>
+
+      <h2>Beyond Bluesky</h2>
+
+      <p>todo</p>
+
+      <hr />
+
+      <h2>Other existing full-network alternative appviews</h2>
+
+      <p>todo: find the c# bsky one</p>
+
+      <h2>Other notes</h2>
+
+      <p>I share concern for the risk that Bluesky poses to decentralized social media. If Bluesky PBC fails, it's not yet clear if the AT-Protocol could survive. Obviously I hope so. ActivityPub and especially the work being done by <a href="https://www.spritely.institute/" target="_blank">Spritely Institute</a> offer resilient decentralized alternatives without single-entity capture, and it's my hope that as people leave the billionaire-owned commercial platforms, the wider ecosystem of protocols can grow, not just atproto.</p>
     </div>
   </body>
 </html>
