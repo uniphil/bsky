@@ -108,23 +108,19 @@ ul.pics img {
   max-width: 100%;
 }
 
+.c {
+  text-align: center;
+}
+
 .im-left {
   display: block;
   float: left;
-  margin: 0 0 1em 1em;
-  position: relative;
-  left: -1em;
+  margin: 0 1em 1em 0;
 }
 .im-right {
   display: block;
   float: right;
-  margin: 0 1em 1em 0;
-  position: relative;
-  right: -1em;
-}
-.im-left.im-right {
-  position: relative;
-  left: 0;
+  margin: 0 0 1em 1em;
 }
 .clear {
   clear: both;

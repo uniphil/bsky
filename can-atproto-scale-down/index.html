@@ -34,44 +34,99 @@
 
       <p>Backlinks can hydrate information about social interactions. <a href="https://skyblur.uk" target="_blank">Skyblur.uk</a> is using the index on this very pi to show the counts of likes, reposts, and replies to a post. The index can tell you about Bluesky quote-posts, replies, account followers and blockers; <a href="https://frontpage.fyi/" target="_blank">Frontpage</a> story comments, upvotes, and so on.</p>
 
-      <p>Obviously this is doing less than Bluesky PBC's AppView so maybe you're not convinced.
+      <p>Obviously this is doing less than Bluesky PBC's AppView so maybe you're not convinced,
 
 <!-- i don't like this para -->
 
-      But zoom out with me: a hard thing that BlueSky's AppView implementation is does is serve over 31 million users (read load) with best-in-class feedgen. Our self-host dream doesn't involve that.</p>
+      but zoom out with me: a Hard Thing that BlueSky's AppView implementation must do is serve over 31 million users (read load) with best-in-class feedgen. Our self-host dream doesn't involve that.</p>
 
       <p>Our self-host dream <em>does</em> involve handling the same 31M user <em>write load</em> as Bluesky's, but I think this is where the <em>it's expensive</em> critique gets wires crossed: Bluesky's <strong>read</strong> load is what's actually expensive. I have a billion links on a happy raspberry pi.</p>
 
-      <h2>AT-Protocol and the Bluesky AppView</h2>
+      <p class="c">~</p>
+
+      <p>iffffff you want to know I think we can go from a backlinks index to a self-hosted mostly-complete Bluesky-compatible AppView experience, I'll get into it below. My project to do it is <a href="https://www.microcosm.blue/" target="_blank">microcosm</a>.</p>
+
+      <hr />
+
+
+      <h2>Scaling down a Bluesky AppView</h2>
 
       <p><em><a href="https://bsky.app/profile/danabra.mov" target="_blank">Dan Abramov</a>'s talk <a href="https://www.youtube.com/watch?v=F1sJW6nTP6E" target="_blank">Web Without Walls</a> is worth a watch if you're new to AT-Protocol.</em></p>
 
-      <img class="im-left" style="width: 40%;" src="./atproto-bsky-flow.jpg" alt="" />
+
+      <h3>Data flow</h3>
+
+      <img class="im-left" style="width: 40%;" src="./atproto-bsky-flow.jpg" alt="A hand-drawn diagram with arrows connecting from top to bottom: multiple PDS boxes, to a Relay, to an AppView labeled 'Bluesky', to a Client app. an arrow connects Client app back up to one of the PDS boxes." />
 
       <p>AT-Protocol has this nice circular (<a href="https://www.youtube.com/watch?v=i__969noyAM" target="_blank">unidirectional</a>!) data flow. Everyone gets their own little personal data repository for their content that's hosted by a <em>PDS</em>, changes are aggregated by a <em>Relay</em>, broadcast to <em>AppViews</em>, which present that content back to you.</p>
 
       <p>Since the AppView gets the full feed of all data from everyone posting in the world, it can be built as a mostly typical http app backend but with an unusual write path.</p>
 
+      <p class="clear"><!-- why am i usign floats in 2025?? --></p>
 
-      <img class="im-left im-right" style="width: calc(60% - 2em);" src="./atproto-ecosystem-flow.jpg" alt="" />
+      <img class="im-right" style="width: calc(60% - 1em);" src="./atproto-ecosystem-flow.jpg" alt="New arrows labeled 'firehose' added to the previous diagram: from the Relay to a Scraper, from Relay to Jetstream, and from Jetstream to several apps: Firesky and Final Words" />
 
-      <p>Bluesky's relay is open, so you can build your own AppView and receive all the global content just by connecting with a websocket. The global content feed is called the <strong>firehose</strong>, and <strong>jetstream</strong> is an awesome firehose adaper that emits simplified JSON.</p>
+      <p>Bluesky's relay is open, so you can build your own AppView and receive all the global content just by connecting with a websocket. You can put your own data types (called <a href="https://atproto.com/guides/lexicon" target="_blank"><em>Lexicons</em></a>) into your users' PDS, and they will come out of the relay just like all of Bluesky's own user data.</p>
+
+      <p>Bluesky's unfiltered relay broadcast is called the <strong>firehose</strong>, and <strong><a href="https://github.com/bluesky-social/jetstream" target="_blank">jetstream</a></strong> is an awesome firehose adaper that re-emits the content as simplified JSON.</p>
 
 
-      <h3 class="clear">Event log, the "shared heap"</h3>
+      <h3 class="clear">Firehose, event log, shared heap</h3>
 
-      <p>todo</p>
+      <p>"Shared heap" is a description of the relay/firehose data flow, coined by Christine Lemmer-Webber in her fantastic <a href="https://dustycloud.org/blog/how-decentralized-is-bluesky/" target="_blank" title="How decentralized is Bluesky really?">critique of AT-Protocol</a>. It contrasts with the "message-passing" architectures of protocols like ActivityPub. I'm mentioning it here because that framing forms a <a href="https://dustycloud.org/blog/re-re-bluesky-decentralization/" target="_blank" title="Re: Re: Bluesky and Decentralization">central part</a> of an argument that AppViews are necessarily expensive, which is part of what motivated this post. And maybe this should be in footnotes since it's kind of aside to the other stuff around it here.</p>
+
+      <p>Event log (todo, or maybe just skip that term)</p>
+
 
       <h3>Bluesky's AppView</h3>
 
-      <img class="im-left" style="width: 60%" src="./bsky-appview.jpg" alt="" />
+      <img class="im-left" style="width: calc(60% - 1em)" src="./bsky-appview.jpg" alt="A large 'AppView' box with a 'Firehose' arrow pointing into it, and multiple arrows exiting to 'Client app' boxes. In the AppView box are shapes: 'Big archive', 'Search', 'Media pipeline, 'Notifications', 'Chats (DMs)', 'Feedgen', 'Mutes', and 'CDN'" />
 
-      <p>&hellip;I mean I don't work there, but asdlfkjasldkjflklaksdfjlkasdjf i need a break</p>
+      <p>&hellip;I mean I don't work there so I don't know the exact breakdown of services. They do have a giant expensive database (ScyllaDB) with a copy of all Bluesky content, but like most modern backends, features will be decomposed into smaller individual services.</p>
 
-      <p class="clear"><span style="text-decoration: line-through wavy;">I could probably end it here, but I'm going to use the rest of the space here to outline a decomposition of Bluesky's appview that I believe can be self-hosted at a small scale. If you're more interested in action, <a href="https://www.microcosm.blue/" target="_blank">microcosm</a> is my side-project to actually build it.</span></p>
+      <p>The point is that when someone says "The Bluesky AppView", or even "AppView" as an AT-Protocol component, I think it obscures the fact that there's a lot going on there. Breaking it down into feature-oriented pieces might lead us to discover self-hostable alternative ways to implement them.</p>
+
+      <p class="clear"><!-- wheeeee drift away --></p>
+
+      <h3 class="clear">No-AppView apps</h3>
+
+      <img class="im-right" style="width: 40%" src="./browser.jpg" alt="" />
+
+      <p>One more detour, about that big giant database in the Bluesky appview. All the data in there is also avaialable its owners' PDS, and you can fetch it directly any time you want (if you don't have to reply ultra-fast to 31M users).</p>
+
+      <p>You can do this right now, in your browser, with some <em>awesome</em> tooling folks are building:</p>
+
+      <ul>
+        <li><a href="https://atproto-browser.vercel.app/" target="_blank"><code>atproto-browser</code></a></li>
+        <li><a href="https://pdsls.dev/" target="_blank"><code>PDSls</code></a></li>
+        <li><a href="https://atp.tools/" target="_blank"><code>@tools</code></a></li>
+      </ul>
+
+      <p>And if you click around a bit, you might get the feeling that this is <em>almost enough</em> to be able to doomscroll Bluesky. Like really: <a href="https://atp.tools/at:/jay.bsky.team/app.bsky.feed.post/3lhk6lcm64s2g" target="_blank">a fully rendered Bluesky post</a>. You could already rebuild your <em>following</em> feed without any AppView:</p>
+
+      <ol>
+        <li>fetch the list of accounts you follow from your own PDS</li>
+        <li>fetch the latest posts from each of their PDS</li>
+        <li>render them</li>
+      </ol>
+
+      <img class="im-right" style="width: 40%" src="./skyblur-x-constellation-crop.png" alt="a crop from the same skyblur screenshot from earlier: screenshot of skyblur.uk post announcing that it uses constellation to fetch like and repost counts. it shows like and repost counts (very meta)." />
+
+      <img class="clear im-right" style="width: 40%" src="./browser-plus-links.jpg" />
+
+      <p>Social interactions are still missing and it won't be fast. But I have a billion links on a raspberry pi so we can solve the first part, remember ➡️</p>
+
+      <p>We're getting closer to Bluesky.</p>
+
+      <p>Here, have some backlinks in your PDS browser:</p>
+
+      <ul>
+        <li><a href="https://atproto-browser-plus-links.vercel.app/" target="_blank"><code>atproto-browser with backlinks</code></a></li>
+        <li><a href="https://pdsls.links.bsky.bad-example.com/" target="_blank"><code>PDSls with backlinks</code></a></li>
+      </ul>
 
 
-      <h2>Small services that work together</h2>
+      <h3 class="clear">Composable micro-AppViews</h3>
 
       <p>todo</p>
 
@@ -92,6 +147,8 @@
       <p>I share concern for the risk that Bluesky poses to decentralized social media. If Bluesky PBC fails, it's not yet clear if the AT-Protocol could survive. Obviously I hope so. ActivityPub and especially the work being done by <a href="https://www.spritely.institute/" target="_blank">Spritely Institute</a> offer resilient decentralized alternatives without single-entity capture, and it's my hope that as people leave the billionaire-owned commercial platforms, the wider ecosystem of protocols can grow, not just atproto.</p>
 
       <p>credible exit</p>
+
+      <p>yeah I said the atproto data flow was unidirectional and i know that in practice clients proxy appview requests through their pds. (proxying allows neat things like read-your-own-write without waiting for your write to get picked up by the appview). it's an important detail (and moreso if they formalize the spec around that so non-bsky lexicons can also make use of it) but i think the unidirectional description is still useful.</p>
     </div>
   </body>
 </html>
