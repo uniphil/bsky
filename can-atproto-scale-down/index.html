@@ -114,7 +114,7 @@
 
       <img class="clear im-right" style="width: 40%" src="./browser-plus-links.jpg" />
 
-      <p>Social interactions are still missing and it won't be fast. But I have a billion links on a raspberry pi so we can solve the first part, remember ➡️</p>
+      <p>Social interactions are still missing and it won't be fast. But I have a billion links on a raspberry pi so we can already solve the first part, remember ➡️</p>
 
       <p>We're getting closer to Bluesky.</p>
 
@@ -125,14 +125,54 @@
         <li><a href="https://pdsls.links.bsky.bad-example.com/" target="_blank"><code>PDSls with backlinks</code></a></li>
       </ul>
 
+      <p>(<em>Atproto link aggregator</em> is now called <a href="https://www.microcosm.blue/" target="_blank">Constellation</a>. I drew these diagrams quite a while ago)</p>
+
+
+      <h3 class="clear">Feed generation</h3>
+
+      <p>You could take different approaches to speed up the slow <em>following</em> feed generation above. Another micro-appview could listen to the firehose and pre-cache posts from accounts you follow. That pre-cache could expand to friend-of-a-friend, and you might get a decent hit rate on reposts.</p>
+
+      <p>You could adopt the feed generation APIs that the Bluesky app uses and plug in existing custom feeds. If you pro-actively render these as content comes in (push style), it might even feel like pretty good UX. For a small number of users it's not resource-demanding.</p>
+
 
       <h3 class="clear">Composable micro-AppViews</h3>
 
-      <p>todo</p>
+      <img class="im-right" style="width: 30%" src="./notifications.jpg" alt="a blue arrow labeled 'firehose' points down to a box called 'atproto link notifier'. it has arrows to and from stacked boxes below titled 'subscribers for notifications'." />
 
-      <h2>Beyond Bluesky</h2>
+      <p>So we have a backlink index for hydrating social interactions: exists and works today. A hand-wavey feedgen descripition that hopefully sounds plausible. <strong>Notifications</strong> are an important part of social media. And they're actually pretty easy!</p>
 
-      <p>todo</p>
+      <p>All Bluesky notifications (except DMs) are just backlinks-as-they-happen. We already have code that extracts backlinks from the firehose in real time: adapt it to trigger webhooks or send a websocket message whenever a new backlink refers to your account or content!</p>
+
+      <p>Pieces are coming together:</p>
+
+      <img src="backyard.jpg" alt="diagram with a large central box that says 'pi-sized appview' with smaller boxes inside: atproto link aggregator, atproto link notifier, atproto record cache, and lazy cdn are all internally pointed at by 'MySky' for 'hydrate likes', 'notifications', 'feed', and 'media' respectively. from the outside above there is a thick blue arrow labeled 'firehose' that points at 'jetstream' which in turn points to several of the internal boxes. the link notifier, record cache, and lazy cdn point with ligher arrows to three PDS boxes above. finally, a stack of client app boxes below are pointed at by 'MySky'." />
+
+      <p>All of these components can run with minimal resources. I really think that self-hosting a Bluesky-compatible appview with most of the full Bluesky experience is within reach.</p>
+
+
+      <h3 class="clear">Beyond Bluesky</h3>
+
+      <p>Like the backlink index, these micro-AppView services don't have to be specific to Bluesky content. Backlinks tend look the same across all lexicons so far, so notifications can just work. PDSs store media as blobs in a generic way, so atproto CDNs can benefit all types.</p>
+
+      <p>I don't think the usefulness of these services is limited to cloning other AppViews either. If you build a new photo-sharing app on atproto, you <em>could</em> lean on the microcosm notification service (soon, it's a work in progress), subscribing to interactions sourced from your lexicon for users instead of implementing it yourself. Even if just in the prototyping phase.</p>
+
+
+      <h2>The big picture</h2>
+
+      <p>I'd like to think of this as a bottom-up approach to scaling down. It's at least partly a response to some of "is bluesky decentralized really", but does it get us there? If we scale to millions of copies of micro-AppViews, it will burden the relays. If we approach content hydration with caches that have to often re-fetch from PDS, it could overload them. If you self-host a viral skeet will you get a surprise bandwidth bill? Operating and orchestrating all the little services is probably not within reach for many people even if it is cheap. Is this really a meaningful contribution to decentralization?</p>
+
+      <p>Well thanks, me, for asking. I don't about meaningful but I have two sources of optimism:</p>
+
+      <ol>
+        <li><p>Many of the micro-AppView components can be <strong>shared</strong>, just like Bluesky's relay. Like the relay, the backlink index requires a global view, and it's somewhat neutral and substitutable. The notification service isn't specific to Bluesky's lexicon. Maybe the number of instances will grow at something like a log-N of users they serve.</p></li>
+        <li><p>Top-down approaches to decentralizing might also work out! Maybe another org with some cash or funding will start running a full-scale Bluesky-compatible alternative AppView with Big Giant Databases ready to serve millions of users worth of read load.</p></li>
+      </ol>
+
+      <p>I think a healthy future for AT-Protocol looks like both kinds, top-down and bottom-up decentralization* happening.</p>
+
+      <p class="c">~</p>
+
+      <p><small>*feel free to quibble with my use of the word "decentralization" here and in this whole post. I'm with you.</small></p>
 
       <hr />
 
