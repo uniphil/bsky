@@ -17,7 +17,7 @@
         <h1><a href="../">atproto and bluesky</a></h1>
       </header>
       <h1>Can atproto scale down?</h1>
-      <p>2025-02-12 by <a href="https://bsky.app/profile/bad-example.com" target="_blank" title="bluesky profile: bad-example.com">phil</a> <small>(they/them)</small></p>
+      <p>2025-02-14 by <a href="https://bsky.app/profile/bad-example.com" target="_blank" title="bluesky profile: bad-example.com">phil</a> <small>(they/them)</small></p>
 
       <p><em>status: draft in progress, please don't share yet</em></p>
 
@@ -32,7 +32,7 @@
         <li><img src="./skyblur-x-constellation.png" alt="screenshot of skyblur.uk post announcing that it uses constellation to fetch like and repost counts. it shows like and repost counts (very meta)." /></li>
       </ul>
 
-      <p>Backlinks can hydrate information about social interactions. <a href="https://skyblur.uk" target="_blank">Skyblur.uk</a> is using the index on this very pi to show the counts of likes, reposts, and replies to a post. The index can tell you about Bluesky quote-posts, replies, account followers and blockers; <a href="https://frontpage.fyi/" target="_blank">Frontpage</a> story comments, upvotes, and so on.</p>
+      <p>Backlinks can hydrate information about social interactions. <a href="https://skyblur.uk" target="_blank">Skyblur.uk</a> is using the index on this very pi to show Bluesky interaction counts. The index can also list all quote-posts, replies, account followers and blockers; <a href="https://frontpage.fyi/" target="_blank">Frontpage</a> story comments, upvotes, and so on.</p>
 
       <p>Obviously this is doing less than Bluesky PBC's AppView so maybe you're not convinced,
 
@@ -172,23 +172,30 @@
 
       <p class="c">~</p>
 
-      <p><small>*feel free to quibble with my use of the word "decentralization" here and in this whole post. I'm with you.</small></p>
+      <p><small>*feel free to quibble with my use of the word "decentralization" here and in this whole post. I do too.</small></p>
 
       <hr />
 
-      <h2>Other existing full-network alternative appviews</h2>
-
-      <p>todo: find the c# bsky one</p>
-
       <h2>Other notes</h2>
 
-      <p><a href="https://dustycloud.org/blog/how-decentralized-is-bluesky/" target="_blank" title="How decentralized is Bluesky really?">the best atproto critque i know of, and a few points of which this post tries to disprove</a></p>
+      <ul>
+        <li>
+          <p><a href="https://bsky.app/profile/alnkq.bsky.social" target="_blank">@alnkq.bsky.social</a> already did pretty much all of this! A Bluesky-compatible, many-featured, low-resource AppView that listens to the firehose, maintains reverse-indices, and falls back on fetching content from PDSs. Their source is <a href="https://github.com/alnkesq/AppViewLite" target="_blank">on github</a>.</p>
+        </li>
 
-      <p>I share concern for the risk that Bluesky poses to decentralized social media. If Bluesky PBC fails, it's not yet clear if the AT-Protocol could survive. Obviously I hope so. ActivityPub and especially the work being done by <a href="https://www.spritely.institute/" target="_blank">Spritely Institute</a> offer resilient decentralized alternatives without single-entity capture, and it's my hope that as people leave the billionaire-owned commercial platforms, the wider ecosystem of protocols can grow, not just atproto.</p>
+        <li>
+          <p>I linked it in the post and I'll link it again: <a href="https://bsky.app/profile/dustyweb.bsky.social" target="_blank">Christine Lemmer-Webber</a>'s atproto critique <a href="https://dustycloud.org/blog/how-decentralized-is-bluesky/" target="_blank">How decentralized is Bluesky really?</a></p>
 
-      <p>credible exit</p>
+          <ul>
+            <li>Personally it's not clear to me if AT-Protocol will survive if Bluesky fails. (it's personally not clear to me if it will survive if the upcoming limited-audience data capability doesn't hit the right chord). But it will really suck if Bluesky failing holds back decentralized social media at large, or becomes "evidence" that it can't succeed. ActivityPub and especially the work being done by <a href="https://www.spritely.institute/" target="_blank">Spritely Institute</a> offer resilient decentralized alternatives that are architecturally more resistent to centralization, and it's my hope that the wider ecosystem of protocols can all grow, not just atproto, even though atproto is what has captured my imagination for now. I'm a supporter of Spritely. You too can <a href="https://www.spritely.institute/donate/" target="_blank">donate here</a>.</li>
+          </ul>
+        </li>
 
-      <p>yeah I said the atproto data flow was unidirectional and i know that in practice clients proxy appview requests through their pds. (proxying allows neat things like read-your-own-write without waiting for your write to get picked up by the appview). it's an important detail (and moreso if they formalize the spec around that so non-bsky lexicons can also make use of it) but i think the unidirectional description is still useful.</p>
+        <li>
+          <p>"unidirectional" data flow. Yeah I simplified the <em>Data flow</em> intro: your Bluesky client app actually makes proxied requests to the appview via your PDS, which importantly enables read-your-own-write without waiting for your own content to get indexed by the AppView. So maybe it's not exactly unidirectional, but personally I'm taking to considering the PDS as a kind of "user agent" for clients anyway, so circularity restored. Take that.</p>
+        </li>
+
+      </ul>
     </div>
   </body>
 </html>
