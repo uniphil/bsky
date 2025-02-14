@@ -19,8 +19,6 @@
       <h1>Can atproto scale down?</h1>
       <p>2025-02-14 by <a href="https://bsky.app/profile/bad-example.com" target="_blank" title="bluesky profile: bad-example.com">phil</a> <small>(they/them)</small></p>
 
-      <p><em>status: draft in progress, please don't share yet</em></p>
-
       <p>It's frequently stated<sup>[by who?]</sup> that some core components of the <a href="https://atproto.com/" target="_blank">AT-Protocol</a> architecture are <em>expensive</em> to host and don't scale down. So expensive that they are out of reach reach except for VC-funded commercial companies like Bluesky PBC, and expensive due to the structure of the protocol itself. Very non-decentralized.</p>
 
       <p>We're going to skip past your <strong>Personal Data Server</strong> (PDS; cheap), going to put aside the <strong>Relay</strong> costs for now, and consider Bluesky's expensive <strong>AppView</strong> component.</p>
@@ -159,8 +157,8 @@
       <p>Well thanks, me, for asking. I don't about meaningful but I have two sources of optimism:</p>
 
       <ol>
-        <li><p>Many of the micro-AppView components can be <strong>shared</strong>, just like Bluesky's relay. Like the relay, the backlink index requires a global view, and it's somewhat neutral and substitutable. The notification service isn't specific to Bluesky's lexicon. Maybe the number of instances will grow at something like a log-N of users they serve.</p></li>
-        <li><p>Top-down approaches to decentralizing might also work out! Maybe another org with some cash or funding will start running a full-scale Bluesky-compatible alternative AppView with Big Giant Databases ready to serve millions of users worth of read load.</p></li>
+        <li><p>Many of the micro-AppView components can be <strong>shared</strong>, just like Bluesky's relay. Like the relay, the backlink index requires a global view, and it's somewhat neutral and substitutable. The notification service isn't specific to Bluesky's lexicon. Maybe the number of instances will grow at something like a log-N of the network size.</p></li>
+        <li><p>Top-down approaches to decentralizing might also work out! Maybe <a href="https://freeourfeeds.com/" target="_blank">another org</a> with some cash or funding will start running a full-scale Bluesky-compatible alternative AppView with Big Giant Databases ready to serve millions of users worth of read load.</p></li>
       </ol>
 
       <p>I think a healthy future for AT-Protocol looks like both kinds, top-down and bottom-up decentralization* happening.</p>
@@ -175,14 +173,14 @@
 
       <ul>
         <li>
-          <p>Turns out <a href="https://bsky.app/profile/alnkq.bsky.social" target="_blank">@alnkq.bsky.social</a> already did pretty much all of this! A Bluesky-compatible, many-featured, low-resource AppView that listens to the firehose, maintains reverse-indices, and falls back on fetching content from PDSs. Their source is <a href="https://github.com/alnkesq/AppViewLite" target="_blank">on github</a>.</p>
+          <p>Turns out <a href="https://bsky.app/profile/alnkq.bsky.social" target="_blank">@alnkq.bsky.social</a> already did pretty much all of this! A Bluesky-compatible, many-featured, low-resource AppView that listens to the firehose, maintains reverse-indices, and falls back on fetching content from PDSs. Their code is <a href="https://github.com/alnkesq/AppViewLite" target="_blank">on github</a>!</p>
         </li>
 
         <li>
           <p>I linked it in the post and I'll link it again: <a href="https://bsky.app/profile/dustyweb.bsky.social" target="_blank">Christine Lemmer-Webber</a>'s atproto critique <a href="https://dustycloud.org/blog/how-decentralized-is-bluesky/" target="_blank">How decentralized is Bluesky really?</a></p>
 
           <ul>
-            <li>Personally it's not clear to me if AT-Protocol will survive if Bluesky fails. (it's personally not clear to me if it will survive if the upcoming limited-audience data capability doesn't hit the right chord). But it will really suck if Bluesky failing holds back decentralized social media at large, or becomes "evidence" that it can't succeed. ActivityPub and especially the work being done by <a href="https://www.spritely.institute/" target="_blank">Spritely Institute</a> offer resilient decentralized alternatives that are architecturally more resistent to centralization, and it's my hope that the wider ecosystem of protocols can all grow, not just atproto, even though atproto is what has captured my imagination for now. I'm a supporter of Spritely. You too can <a href="https://www.spritely.institute/donate/" target="_blank">donate here</a>.</li>
+            <li>Tangential: it's personally not clear to me if AT-Protocol will survive if Bluesky fails. (it's personally not clear to me if it will survive unless the upcoming limited-audience data capability really hits the right chord). But it will really suck if Bluesky fails and its failing holds back decentralized social media at large, or becomes evidence that it can't succeed. ActivityPub and even more excitingly the work being done by <a href="https://www.spritely.institute/" target="_blank">Spritely Institute</a> offer resilient decentralized alternative protocols that are structurally more resistent to centralization, and it's my hope that the wider ecosystem of protocols can all grow, not just atproto, even though atproto is what has captured my imagination for now. I'm a supporter of Spritely. You too can <a href="https://www.spritely.institute/donate/" target="_blank">donate here</a>.</li>
           </ul>
         </li>
 
@@ -195,7 +193,7 @@
         </li>
 
         <li>
-          <p>I think I had originally meant to also discuss search. But now I don't remember what I would have said. A community OpenSearch instance (or something) will probably pop up at some point right? Full global search is going to cost, but I think it can be a widely-shared burden.</p>
+          <p>I think I had originally meant to also discuss search. But now I don't remember what I would have said. A community OpenSearch instance (or something) will probably pop up at some point right? Full global search is going to cost, but I think it can be a widely-shared burden. Maybe it's not that expensive? Maybe I'll try.</p>
         </li>
 
         <li>
