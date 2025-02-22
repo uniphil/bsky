@@ -36,38 +36,62 @@ const merge_link_buckets = links =>
 const merged = merge_link_buckets(bucketed);
 console.log(bucket_total_bounds(merged), merged);
 
-// Declare the chart dimensions and margins.
-const width = 640;
-const height = 400;
-const marginTop = 20;
-const marginRight = 20;
-const marginBottom = 30;
-const marginLeft = 40;
 
-// Declare the x (horizontal position) scale.
-const x = d3.scaleUtc()
-    .domain([new Date("2023-01-01"), new Date("2024-01-01")])
-    .range([marginLeft, width - marginRight]);
+const summary = (name, links, level) => {
+  let merged_buckets = merge_link_buckets(bucketed);
+  const bounds = bucket_total_bounds(merged_buckets);
+  console.log(bounds);
+  const title = `${name} (${bounds.lower.toLocaleString()} – ${bounds.upper_inf ? '>' : ''}${bounds.upper.toLocaleString()} total)`;
+  const d = d3.create('div')
+    .style('display', 'flex')
+    .style('align-items', 'flex-center')
+    .style('gap', '1em');
+  d.append(`h${level || 1}`)
+    .style('margin-bottom', '0')
+    .text(title);
+  d.append(() => mini_hist(merged_buckets));
+  return d;
+}
 
-// Declare the y (vertical position) scale.
-const y = d3.scaleLinear()
-    .domain([0, 100])
-    .range([height - marginBottom, marginTop]);
+const mini_hist = buckets => {
+  const width = 320;
+  const height = 72;
+  const pad_top = 6;
+  const pad_bottom = 16;
+  const pad_left = 36;
+  const pad_right = 6;
 
-// Create the SVG container.
-const svg = d3.create("svg")
-    .attr("width", width)
-    .attr("height", height);
+  const svg = d3
+    .create('svg')
+      .attr('width', width)
+      .attr('height', height);
 
-// Add the x-axis.
-svg.append("g")
-    .attr("transform", `translate(0,${height - marginBottom})`)
-    .call(d3.axisBottom(x));
+  const drawable = svg
+    .append('g')
+      .attr('transform', `translate(${pad_left}, ${pad_top})`);
 
-// Add the y-axis.
-svg.append("g")
-    .attr("transform", `translate(${marginLeft},0)`)
-    .call(d3.axisLeft(y));
+  const x = d3.scaleLog([.4, 1048576], [0, width - pad_left - pad_right])
+  const y = d3.scaleLog([1, Math.max.apply(null, buckets)], [height - pad_top - pad_bottom, 0]);
 
-// Append the SVG element.
-container.append(svg.node());
+  drawable.append('g')
+    .attr('transform', `translate(0, ${height - pad_top - pad_bottom})`)
+    .call(d3.axisBottom(x))
+
+  drawable.append('g')
+    .call(d3.axisLeft(y).ticks(4))
+
+  drawable.selectAll('rect')
+    .data(buckets)
+    .enter()
+    .append('rect')
+      .attr('x', 0)
+      .attr('transform', (d, i) => `translate(${i == 0 ? 0 : x(bucket_sizes[i-1])}, ${y(d)})`)
+      .attr('width', (_, i) => (i == 0 ? x(1) : (x(bucket_sizes[i]) - x(bucket_sizes[i-1]))) - 1)
+      .attr('height', d => height - pad_top - pad_bottom - y(d))
+      .style('fill', '#69b3a2')
+
+  return svg.node();
+}
+
+
+container.append(summary('all links', bucketed, 2).node());
