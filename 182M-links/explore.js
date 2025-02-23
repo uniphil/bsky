@@ -37,15 +37,22 @@ const merged = merge_link_buckets(bucketed);
 const summary = (name, links, level) => {
   let merged_buckets = merge_link_buckets(links);
   const bounds = bucket_total_bounds(merged_buckets);
-  const title = `${name} (${bounds.lower.toLocaleString()} – ${bounds.upper_inf ? '>' : ''}${bounds.upper.toLocaleString()} total)`;
   const d = d3.create('div')
     .style('display', 'flex')
     .style('align-items', 'flex-center')
     .style('gap', '1em');
   d.append(() => mini_hist(merged_buckets));
-  d.append(`h${level || 1}`)
-    .style('margin-bottom', '0')
-    .text(title);
+
+  const info = d.append('div');
+  info.append(`h${level || 1}`)
+    .style('margin', '0')
+    .text(name);
+
+  const bounds_txt = `backlinks: lower bound: ${bounds.lower.toLocaleString()}; upper: ${bounds.upper_inf ? '>' : ''}${bounds.upper.toLocaleString()}`;
+  info.append('p')
+    .style('margin', '0.5em 0')
+    .text(bounds_txt);
+
   return d;
 }
 
@@ -83,6 +90,7 @@ const mini_hist = buckets => {
     .data(buckets)
     .enter()
     .append('rect')
+      .filter(d => d > 0)
       .attr('x', 0)
       .attr('transform', (d, i) => `translate(${i == 0 ? 0 : x(bucket_sizes[i-1])}, ${y(d)})`)
       .attr('width', (_, i) => (i == 0 ? x(1) : (x(bucket_sizes[i]) - x(bucket_sizes[i-1]))) - 1)
@@ -93,7 +101,7 @@ const mini_hist = buckets => {
 }
 
 
-const breakdown = (desc, data, grouper) => {
+const breakdown = (desc, data, grouper, level) => {
   const groups = {};
   data.forEach(stat => {
     const group_name = grouper(stat);
@@ -106,11 +114,15 @@ const breakdown = (desc, data, grouper) => {
   Object.keys(groups).forEach(group_name => {
     as_items.push({ group_name, buckets: groups[group_name] });
   })
-  as_items.sort((a, b) =>
-    bucket_total_bounds(merge_link_buckets(b.buckets)).lower -
-    bucket_total_bounds(merge_link_buckets(a.buckets)).lower);
+  as_items.sort((a, b) => {
+    const a_bounds = bucket_total_bounds(merge_link_buckets(a.buckets));
+    const b_bounds = bucket_total_bounds(merge_link_buckets(b.buckets));
+    return (b_bounds.lower + b_bounds.upper) - (a_bounds.lower + a_bounds.upper);
+  });
 
   const container = d3.create('div');
+
+  container.append(`h${level}`).text(desc);
 
   container
     .selectAll('div.group')
@@ -118,7 +130,7 @@ const breakdown = (desc, data, grouper) => {
     .enter()
     .append('div')
       .classed('group', true)
-      .append(({ group_name, buckets }) => summary(group_name, buckets, 3).node());
+      .append(({ group_name, buckets }) => summary(group_name, buckets, level+1).node());
 
   return container;
 }
@@ -126,4 +138,4 @@ const breakdown = (desc, data, grouper) => {
 
 container.append(summary('all links', bucketed, 2).node());
 
-container.append(breakdown('by nsid prefix', bucketed, by_collection_prefix).node());
+container.append(breakdown('by nsid prefix', bucketed, by_collection_prefix, 3).node());
