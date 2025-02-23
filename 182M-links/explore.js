@@ -10,8 +10,6 @@ let bucketed = data.map(link_stats => {
   return { collection, link_path, link_type, linking_record_sample, buckets };
 });
 
-console.log(bucketed);
-
 const bucket_merge = (buckets_init, buckets_to_merge) =>
   (buckets_init || Array.from({ length: bucket_names.length }).map(_ => 0))
     .map((init, i) => init + buckets_to_merge[i]);
@@ -34,24 +32,25 @@ const merge_link_buckets = links =>
   links.reduce((a, b) => bucket_merge(a, b.buckets), null)
 
 const merged = merge_link_buckets(bucketed);
-console.log(bucket_total_bounds(merged), merged);
 
 
 const summary = (name, links, level) => {
-  let merged_buckets = merge_link_buckets(bucketed);
+  let merged_buckets = merge_link_buckets(links);
   const bounds = bucket_total_bounds(merged_buckets);
-  console.log(bounds);
   const title = `${name} (${bounds.lower.toLocaleString()} – ${bounds.upper_inf ? '>' : ''}${bounds.upper.toLocaleString()} total)`;
   const d = d3.create('div')
     .style('display', 'flex')
     .style('align-items', 'flex-center')
     .style('gap', '1em');
+  d.append(() => mini_hist(merged_buckets));
   d.append(`h${level || 1}`)
     .style('margin-bottom', '0')
     .text(title);
-  d.append(() => mini_hist(merged_buckets));
   return d;
 }
+
+const by_collection_prefix = link =>
+  link.collection.split('.').slice(0, 2).join('.');
 
 const mini_hist = buckets => {
   const width = 320;
@@ -75,10 +74,10 @@ const mini_hist = buckets => {
 
   drawable.append('g')
     .attr('transform', `translate(0, ${height - pad_top - pad_bottom})`)
-    .call(d3.axisBottom(x))
+    .call(d3.axisBottom(x));
 
   drawable.append('g')
-    .call(d3.axisLeft(y).ticks(4))
+    .call(d3.axisLeft(y).ticks(4));
 
   drawable.selectAll('rect')
     .data(buckets)
@@ -88,10 +87,43 @@ const mini_hist = buckets => {
       .attr('transform', (d, i) => `translate(${i == 0 ? 0 : x(bucket_sizes[i-1])}, ${y(d)})`)
       .attr('width', (_, i) => (i == 0 ? x(1) : (x(bucket_sizes[i]) - x(bucket_sizes[i-1]))) - 1)
       .attr('height', d => height - pad_top - pad_bottom - y(d))
-      .style('fill', '#69b3a2')
+      .style('fill', '#f90');
 
   return svg.node();
 }
 
 
+const breakdown = (desc, data, grouper) => {
+  const groups = {};
+  data.forEach(stat => {
+    const group_name = grouper(stat);
+    if (!groups[group_name]) {
+      groups[group_name] = [];
+    }
+    groups[group_name].push(stat);
+  });
+  const as_items = [];
+  Object.keys(groups).forEach(group_name => {
+    as_items.push({ group_name, buckets: groups[group_name] });
+  })
+  as_items.sort((a, b) =>
+    bucket_total_bounds(merge_link_buckets(b.buckets)).lower -
+    bucket_total_bounds(merge_link_buckets(a.buckets)).lower);
+
+  const container = d3.create('div');
+
+  container
+    .selectAll('div.group')
+    .data(as_items)
+    .enter()
+    .append('div')
+      .classed('group', true)
+      .append(({ group_name, buckets }) => summary(group_name, buckets, 3).node());
+
+  return container;
+}
+
+
 container.append(summary('all links', bucketed, 2).node());
+
+container.append(breakdown('by nsid prefix', bucketed, by_collection_prefix).node());
