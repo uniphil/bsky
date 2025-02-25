@@ -91,7 +91,7 @@ function bucket(buckets, bucket_groups) {
 
 
 function hist() {
-  let width = 320,
+  let width = 240,
       height = 72,
       bucketing = null,
       y_log = true,
@@ -139,7 +139,7 @@ function hist() {
           .filter(d => d[bucketing_value] > 0)
           .attr('x', 0)
           .attr('transform', (d, i) => `translate(${i == 0 ? 0 : x(d.lower)}, ${y(d[bucketing_value])})`)
-          .attr('width', (d, i) => (i == 0 ? x(1) : (x(Math.min(bucketing.x_max, d.upper)) - x(d.lower))) - 1)
+          .attr('width', (d, i) => (i == 0 ? x(1) : (x(Math.min(bucketing.x_max, d.upper)) - x(d.lower))) - 0.5)
           .attr('height', d => height - pad_top - pad_bottom - y(d[bucketing_value]))
           .style('fill', '#f90');
     });
@@ -171,6 +171,44 @@ function hist() {
   };
 
   return chart;
+}
+
+
+const totals = buckets =>
+  buckets.reduce((a, b) => {
+    a.count += b.count;
+    a.sum += b.sum;
+    a.sample ||= b.sample;
+    return a;
+  }, { count: 0, sum: 0, sample: null });
+
+
+const commas = d3.format(',');
+
+function buckets_info() {
+  function info(selection) {
+    selection.each(function(d) {
+      let info = d3.select(this).selectAll('.buckets-info').data([d]);
+      let info_enter = info.enter().append('div').attr('class', 'buckets-info');
+      info_enter.append('div').attr('class', 'totals');
+      info_enter.append('div').attr('class', 'info-histo');
+      info = d3.select(this).selectAll('.buckets-info');
+
+      const merged = merge(d);
+      const t = totals(merged);
+
+      info.selectAll('.totals')
+        .html(`links: <code>${commas(t.sum)}</code><br/>targets: <code>${commas(t.count)}</code>`);
+
+      info.selectAll('.info-histo')
+        .datum(bucket(merged, current_bucketing.group))
+        .call(hist()
+          .bucketing(current_bucketing)
+          .bucketing_value(current_bucketing_value.bucket_prop)
+          .y_log(bucketing_y_log));
+    });
+  }
+  return info;
 }
 
 
@@ -261,13 +299,15 @@ let bucketing_y_log = true;
 
 ///////
 
-const container = d3.select('.data');
-container
+const container = d3.select('body');
+const top_controls = container.append('div').attr('class', 'top-controls');
+
+top_controls
   .append('h1')
-  .text('hello');
+  .text('1.2 billion links');
 
 
-const histogram_controls = container.append('div').attr('class', 'histogram-controls');
+const histogram_controls = top_controls.append('div').attr('class', 'histogram-controls');
 
 const histogram_bucketing = histogram_controls
   .append('div')
@@ -296,9 +336,13 @@ histogram_y_log
   .text('log scale');
 
 
-const main_hist = container
+const summary = container
   .append('div')
-  .attr('class', 'hist');
+  .attr('class', 'summary');
+
+// const main_hist = container
+//   .append('div')
+//   .attr('class', 'hist');
 
 
 ////
@@ -312,12 +356,9 @@ function render() {
     .datum(bucketing_value_opts)
     .call(hist_value_buttons);
 
-  main_hist
-    .datum(bucket(merge(data), current_bucketing.group))
-    .call(hist()
-      .bucketing(current_bucketing)
-      .bucketing_value(current_bucketing_value.bucket_prop)
-      .y_log(bucketing_y_log));
+  summary
+    .datum(data)
+    .call(buckets_info());
 }
 render();
 

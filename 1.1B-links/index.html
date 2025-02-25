@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Explore atproto record links</title>
+    <title>1.2 billion atproto backlinks</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style>
       body {
@@ -37,6 +37,15 @@
         white-space: nowrap;
         width: 1px;
       }
+      h1 {
+        margin: 0.3em 1em 0.2em 0;
+      }
+      .top-controls {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        margin-bottom: 2em;
+      }
       .histogram-controls {
         display: flex;
         align-items: center;
@@ -67,12 +76,22 @@
       .button-set-item.checked {
         background: #fc9;
       }
+      .buckets-info {
+        display: flex;
+        gap: 0.5em;
+        align-items: center;
+      }
+      .totals {
+        text-align: right;
+      }
+      .totals code {
+        font-weight: bold;
+      }
 
     </style>
   </head>
 
   <body>
-    <div class="data"></div>
     <script src="./d3.min.js"></script>
     <script type="module" src="./explore.js"></script>
   </body>
