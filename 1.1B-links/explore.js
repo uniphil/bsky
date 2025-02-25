@@ -48,11 +48,7 @@ const buckets_10 = [
 ];
 
 const data = await d3.json('./1.1B.json');
-console.log({ data });
 
-const merged = merge(data);
-console.log('merged', merged);
-console.log('bucketed', bucket(merged, buckets_all));
 
 function merge(link_stats) {
   const bucket_merge = (merged, to_merge) =>
@@ -97,7 +93,9 @@ function bucket(buckets, bucket_groups) {
 function hist() {
   let width = 320,
       height = 72,
-      bucketing = null;
+      bucketing = null,
+      y_log = true,
+      bucketing_value = 'count';
   const pad_top = 6;
   const pad_bottom = 16;
   const pad_left = 36;
@@ -106,7 +104,6 @@ function hist() {
   function chart(selection) {
     if (!bucketing) { throw new Error('must specify bucketing to render histogram'); }
     selection.each(function(buckets) {
-      console.log({ buckets })
       let svg = d3.select(this).selectAll('svg').data([buckets]);
       const g_enter = svg.enter().append('svg').append('g').attr('class', 'drawable');
       g_enter.append('g').attr('class', 'bars');
@@ -115,7 +112,9 @@ function hist() {
       svg = d3.select(this).selectAll('svg');
 
       const x = (bucketing.log ? d3.scaleLog : d3.scaleLinear)([bucketing.x0, bucketing.x_max], [0, width - pad_left - pad_right])
-      const y = d3.scaleLog([1, Math.max.apply(null, buckets.map(b => b.count))], [height - pad_top - pad_bottom, 0]);
+      const y = y_log
+        ? d3.scaleLog([1, Math.max.apply(null, buckets.map(b => b[bucketing_value]))], [height - pad_top - pad_bottom, 0])
+        : d3.scaleLinear([0, Math.max.apply(null, buckets.map(b => b[bucketing_value]))], [height - pad_top - pad_bottom, 0]);
 
       // update height/width
       svg.attr('width', width).attr('height', height);
@@ -130,18 +129,18 @@ function hist() {
         .call(d3.axisBottom(x));
 
       svg.select('.y.axis')
-        .call(d3.axisLeft(y).ticks(4));
+        .call(d3.axisLeft(y).ticks(4, "~s"));
 
       // update bars
       svg.select('.bars')
         .selectAll('rect')
         .data(buckets)
         .join('rect')
-          .filter(d => d.count > 0)
+          .filter(d => d[bucketing_value] > 0)
           .attr('x', 0)
-          .attr('transform', (d, i) => `translate(${i == 0 ? 0 : x(d.lower)}, ${y(d.count)})`)
+          .attr('transform', (d, i) => `translate(${i == 0 ? 0 : x(d.lower)}, ${y(d[bucketing_value])})`)
           .attr('width', (d, i) => (i == 0 ? x(1) : (x(Math.min(bucketing.x_max, d.upper)) - x(d.lower))) - 1)
-          .attr('height', d => height - pad_top - pad_bottom - y(d.count))
+          .attr('height', d => height - pad_top - pad_bottom - y(d[bucketing_value]))
           .style('fill', '#f90');
     });
   }
@@ -160,6 +159,16 @@ function hist() {
     bucketing = _;
     return chart;
   };
+  chart.y_log = _ => {
+    if (arguments.length) return y_log;
+    y_log = _;
+    return chart;
+  };
+  chart.bucketing_value = _ => {
+    if (arguments.length) return bucketing_value;
+    bucketing_value = _;
+    return chart;
+  };
 
   return chart;
 }
@@ -167,7 +176,6 @@ function hist() {
 
 function button_group() {
   let input_name = null,
-      items = [],
       on_input = null;
   function group(selection) {
     if (!input_name) { throw new Error('must specify input_name for button_group'); }
@@ -203,11 +211,6 @@ function button_group() {
     input_name = _;
     return group;
   }
-  group.items = _ => {
-    if (arguments.length) return items;
-    items = _;
-    return group;
-  };
   group.on_input = _ => {
     if (arguments.length) return on_input;
     on_input = _;
@@ -215,6 +218,9 @@ function button_group() {
   }
   return group;
 }
+
+////////
+
 
 const bucketing_opts = [
   { label: '2<sup>n</sup>', group: buckets_2_n, x0: 0.5, log: true, x_max: 1048576 },
@@ -233,26 +239,85 @@ const hist_bucketing_buttons = button_group()
   })
 
 
+const bucketing_value_opts = [
+  { label: 'count', bucket_prop: 'count', checked: true },
+  { label: 'sum', bucket_prop: 'sum' },
+];
+let current_bucketing_value = bucketing_value_opts[0];
+const hist_value_buttons = button_group()
+  .input_name('histogram-value')
+  .on_input(change_to => {
+    bucketing_value_opts.forEach(o => o.checked = false);
+    change_to.checked = true;
+    current_bucketing_value = change_to;
+    render();
+  })
+
+
+
+
+let bucketing_y_log = true;
+
+
+///////
+
 const container = d3.select('.data');
 container
   .append('h1')
   .text('hello');
-const histogram_bucketing = container
+
+
+const histogram_controls = container.append('div').attr('class', 'histogram-controls');
+
+const histogram_bucketing = histogram_controls
   .append('div')
-  .attr('class', 'histogram-bucketing');
-histogram_bucketing.append('p').html('histogram<br/>buckets:')
+  .attr('class', 'histogram-buttons');
+histogram_bucketing.append('p').html('histogram<br/>buckets:');
+
+const histogram_value = histogram_controls
+  .append('div')
+  .attr('class', 'histogram-buttons');
+histogram_value.append('p').html('histogram<br/>value:');
+
+
+const histogram_y_log = histogram_controls
+  .append('label');
+histogram_y_log
+  .append('input')
+  .attr('type', 'checkbox')
+  .attr('class', 'y-log-scale')
+  .property('checked', bucketing_y_log)
+  .on('input', function() {
+    bucketing_y_log = this.checked;
+    render();
+  });
+histogram_y_log
+  .append('span')
+  .text('log scale');
+
 
 const main_hist = container
   .append('div')
   .attr('class', 'hist');
 
+
+////
+
 function render() {
   histogram_bucketing
     .datum(bucketing_opts)
     .call(hist_bucketing_buttons);
+
+  histogram_value
+    .datum(bucketing_value_opts)
+    .call(hist_value_buttons);
+
   main_hist
     .datum(bucket(merge(data), current_bucketing.group))
-    .call(hist().bucketing(current_bucketing));
+    .call(hist()
+      .bucketing(current_bucketing)
+      .bucketing_value(current_bucketing_value.bucket_prop)
+      .y_log(bucketing_y_log));
 }
 render();
 
