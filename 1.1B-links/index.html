@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Explore atproto record links</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        font-family: sans-serif;
+      }
+      /**
+       * Prevent `sub` and `sup` elements from affecting the line height in
+       * all browsers.
+       */
+
+      sub,
+      sup {
+        font-size: 75%;
+        line-height: 0;
+        position: relative;
+        vertical-align: baseline;
+      }
+
+      sub {
+        bottom: -0.25em;
+      }
+
+      sup {
+        top: -0.5em;
+      }
+      .sr-only {
+        clip: rect(0 0 0 0);
+        clip-path: inset(50%);
+        height: 1px;
+        overflow: hidden;
+        position: absolute;
+        white-space: nowrap;
+        width: 1px;
+      }
+      .histogram-bucketing {
+        display: flex;
+        align-items: center;
+        gap: 0.5em;
+      }
+      .histogram-bucketing > p {
+        font-size: 0.8em;
+        text-align: right;
+      }
+      .button-set {
+        display: flex;
+        align-items: baseline;
+        border: 0.5px solid #eee;
+        border-width: 0 0.5px;
+      }
+      .button-set-item {
+        cursor: pointer;
+        display: block;
+        padding: 0.5em 0.5em 0.3em;
+        border: 1px solid #eee;
+        border-width: 1px 0.5px;
+      }
+      .button-set-item.checked {
+        background: #fc9;
+      }
+
+    </style>
+  </head>
+
+  <body>
+    <div class="data"></div>
+    <script src="./d3.min.js"></script>
+    <script type="module" src="./explore.js"></script>
+  </body>
+</html>
