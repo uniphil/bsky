@@ -97,9 +97,9 @@ function hist() {
       y_log = true,
       bucketing_value = 'sum';
   const pad_top = 6;
-  const pad_bottom = 16;
+  const pad_bottom = 20;
   const pad_left = 36;
-  const pad_right = 6;
+  const pad_right = 16;
 
   function chart(selection) {
     if (!bucketing) { throw new Error('must specify bucketing to render histogram'); }
@@ -111,7 +111,9 @@ function hist() {
       g_enter.append('g').attr('class', 'y axis');
       svg = d3.select(this).selectAll('svg');
 
-      const x = (bucketing.log ? d3.scaleLog : d3.scaleLinear)([bucketing.x0, bucketing.x_max], [0, width - pad_left - pad_right])
+      const x = bucketing.log
+        ? d3.scaleLog([bucketing.x0, bucketing.x_max], [0, width - pad_left - pad_right]).base(16)
+        : d3.scaleLinear([bucketing.x0, bucketing.x_max], [0, width - pad_left - pad_right]);
       const y = y_log
         ? d3.scaleLog([1, Math.max.apply(null, buckets.map(b => b[bucketing_value]))], [height - pad_top - pad_bottom, 0])
         : d3.scaleLinear([0, Math.max.apply(null, buckets.map(b => b[bucketing_value]))], [height - pad_top - pad_bottom, 0]);
@@ -126,7 +128,9 @@ function hist() {
       // update axes
       svg.select('.x.axis')
         .attr('transform', `translate(0, ${height - pad_top - pad_bottom})`)
-        .call(d3.axisBottom(x));
+        .call(bucketing.log
+          ? d3.axisBottom(x).ticks(5, '.3s')
+          : d3.axisBottom(x));
 
       svg.select('.y.axis')
         .call(d3.axisLeft(y).ticks(4, '~s'));
@@ -286,10 +290,7 @@ function link_types_hbar() {
           .attr('height', bar_interval - bar_gap)
           .style('fill', fill_bar)
           .attr('width', d => x(d[showing_value]))
-          .on('click', function(_, d) {
-            toggle_filter(d.group);
-            chart(selection); // is this bad
-          });
+          .on('click', (_, d) => toggle_filter(d.group));
         g.append('text')
           .text(d => d.group)
           .style('font-size', '13px')
@@ -301,7 +302,7 @@ function link_types_hbar() {
           .text(d => d3.format(',.2s')(d[showing_value]))
           .style('font-size', '13px')
           .attr('y', bar_interval - bar_gap - (bar_interval - bar_gap - 13)/2 - 2)
-          .attr('x', d => x(d[showing_value]))
+          .attr('x', d => x(d[showing_value]));
         return g;
       };
 
@@ -432,7 +433,11 @@ function button_group() {
   return group;
 }
 
-////////
+
+const filter_links = (links, f) => links.filter(f);
+
+
+/////////////////  STATE  ///////////////
 
 
 const bucketing_opts = [
@@ -467,12 +472,19 @@ const hist_value_buttons = button_group()
   })
 
 
-
-
 let bucketing_y_log = false;
 
 
-///////
+let link_type_filter = new Set();
+const link_type_filter_thing = link_types_hbar().on_set_filter(f => {
+  link_type_filter = f;
+  render();
+});
+const get_link_type_filter = f => buckets =>
+  f.size === 0 || f.has(buckets.link_type);
+
+
+//////////////  DOM SETUP  ////////////
 
 const container = d3.select('body');
 const top_controls = container.append('div').attr('class', 'top-controls');
@@ -515,14 +527,13 @@ const link_types = container
   .append('div')
   .attr('class', 'link-types');
 
-
 const summary = container
   .append('div')
   .attr('class', 'summary');
 
 
 
-////
+///// ///// /////  renderrrrrr  ///// ///// /////
 
 function render() {
   histogram_bucketing
@@ -535,13 +546,14 @@ function render() {
 
   link_types
     .datum(data)
-    .call(link_types_hbar()
+    .call(link_type_filter_thing
       .showing_value(current_bucketing_value.bucket_prop)
-      .log_scale(bucketing_y_log)
-      .on_set_filter(f => console.log('filter', f)));
+      .log_scale(bucketing_y_log));
+
+  const link_type_filtered = filter_links(data, get_link_type_filter(link_type_filter));
 
   summary
-    .datum(data)
+    .datum(link_type_filtered)
     .call(buckets_info());
 }
 render();
