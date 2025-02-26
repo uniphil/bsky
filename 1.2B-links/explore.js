@@ -207,6 +207,38 @@ function link_types_hbar() {
 
   let log_scale = false;
   let showing_value = 'sum';
+  let on_set_filter = () => null;
+
+  let filter_options = new Set();
+  let filter = new Set();
+
+  const filter_none_if_all = () => {
+    if (filter.size === filter_options.size) {
+      filter = new Set();
+    }
+  };
+
+  const toggle_filter = f => {
+    if (!filter_options.has(f)) { throw new Error(`tried to toggle filter that was not an option: ${f}`); }
+    if (filter.has(f)) {
+      filter.delete(f);
+      on_set_filter(filter);
+    } else {
+      filter.add(f);
+      filter_none_if_all();
+      on_set_filter(filter);
+    }
+  };
+
+  const set_filter_options = opts => {
+    filter_options = new Set(opts);
+    const filter_before_size = filter.size;
+    filter = filter.intersection(filter_options);
+    filter_none_if_all();
+    if (filter.size !== filter_before_size) {
+      on_set_filter(filter);
+    }
+  };
 
   function chart(selection) {
     selection.each(function(d) {
@@ -215,6 +247,8 @@ function link_types_hbar() {
         .map(({ group, links }) => Object.assign(
           { group },
           collapse_buckets(merge(links))));
+
+      set_filter_options(summarized.map(s => s.group));
 
       summarized.sort((a, b) => a.group.localeCompare(b.group));
 
@@ -243,21 +277,18 @@ function link_types_hbar() {
 
       const bar_interval = (height - pad_bottom) / summarized.length;
 
+      const fill_bar = d => d.include ? '#f90' : '#ccc';
+
       const enter_bar = enter => {
         const g = enter.append('g').attr('class', 'bar');
         g.append('rect')
           .attr('x', 0)
           .attr('height', bar_interval - bar_gap)
-          .style('fill', '#f90')
+          .style('fill', fill_bar)
           .attr('width', d => x(d[showing_value]))
-          .on('mouseover', function() {
-            d3.select(this).style('fill', '#a60');
-          })
-          .on('mouseout', function() {
-            d3.select(this).style('fill', '#f90');
-          })
           .on('click', function(_, d) {
-            console.log(d.group);
+            toggle_filter(d.group);
+            chart(selection); // is this bad
           });
         g.append('text')
           .text(d => d.group)
@@ -277,7 +308,8 @@ function link_types_hbar() {
       const update_bar = update => {
         update
           .select('rect')
-          .attr('width', d => x(d[showing_value]));
+          .attr('width', d => x(d[showing_value]))
+          .style('fill', fill_bar);
         update
           .select('.n')
           .text(d => d3.format(',.2s')(d[showing_value]))
@@ -288,7 +320,7 @@ function link_types_hbar() {
       // update bars
       svg.select('.bars')
         .selectAll('.bar')
-        .data(summarized)
+        .data(summarized.map(s => Object.assign(s, {include: filter.has(s.group) || filter.size === 0 })))
         .join(enter_bar, update_bar)
           .attr('transform', (_d, i) => `translate(0, ${i * bar_interval + bar_gap})`)
 
@@ -306,6 +338,12 @@ function link_types_hbar() {
     log_scale = _;
     return chart;
   };
+
+  chart.on_set_filter = _ => {
+    if (arguments.length) return on_set_filter;
+    on_set_filter = _;
+    return chart;
+  }
 
   return chart;
 }
@@ -499,7 +537,8 @@ function render() {
     .datum(data)
     .call(link_types_hbar()
       .showing_value(current_bucketing_value.bucket_prop)
-      .log_scale(bucketing_y_log));
+      .log_scale(bucketing_y_log)
+      .on_set_filter(f => console.log('filter', f)));
 
   summary
     .datum(data)
