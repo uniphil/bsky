@@ -95,7 +95,7 @@ function hist() {
       height = 72,
       bucketing = null,
       y_log = true,
-      bucketing_value = 'count';
+      bucketing_value = 'sum';
   const pad_top = 6;
   const pad_bottom = 16;
   const pad_left = 36;
@@ -129,7 +129,7 @@ function hist() {
         .call(d3.axisBottom(x));
 
       svg.select('.y.axis')
-        .call(d3.axisLeft(y).ticks(4, "~s"));
+        .call(d3.axisLeft(y).ticks(4, '~s'));
 
       // update bars
       svg.select('.bars')
@@ -167,6 +167,143 @@ function hist() {
   chart.bucketing_value = _ => {
     if (arguments.length) return bucketing_value;
     bucketing_value = _;
+    return chart;
+  };
+
+  return chart;
+}
+
+
+const group_by = grouper => links => {
+  const by_group = {};
+  links.forEach(buckets => {
+    const group = grouper(buckets);
+    if (!by_group[group]) {
+      by_group[group] = [];
+    }
+    by_group[group].push(buckets);
+  });
+  return Object.keys(by_group).map(group =>
+    ({ group, links: by_group[group] }));
+};
+
+const group_by_link_type = group_by(buckets => buckets.link_type);
+
+const collapse_buckets = buckets =>
+  buckets.reduce((a, b) => {
+    a.count += b.count;
+    a.sum += b.sum;
+    a.sample ||= b.sample;
+    return a;
+  }, { count: 0, sum: 0, sample: null });
+
+function link_types_hbar() {
+  const height = 64;
+  const width = 192;
+  const pad_left = 36;
+  const pad_right = 36;
+  const pad_bottom = 16;
+  const bar_gap = 1;
+
+  let log_scale = false;
+  let showing_value = 'sum';
+
+  function chart(selection) {
+    selection.each(function(d) {
+
+      const summarized = group_by_link_type(d)
+        .map(({ group, links }) => Object.assign(
+          { group },
+          collapse_buckets(merge(links))));
+
+      summarized.sort((a, b) => a.group.localeCompare(b.group));
+
+      let svg = d3.select(this).selectAll('svg').data([summarized]);
+      const g_enter = svg.enter().append('svg').append('g').attr('class', 'drawable');
+      g_enter.append('g').attr('class', 'bars');
+      g_enter.append('g').attr('class', 'x axis');
+      svg = d3.select(this).selectAll('svg');
+
+      const x_max = Math.max.apply(null, summarized.map(t => t[showing_value]));
+      const x = log_scale
+        ? d3.scaleLog([1, x_max], [0, width - pad_left - pad_right])
+        : d3.scaleLinear([0, x_max], [0, width - pad_left - pad_right]);
+
+      // update height/width
+      svg.attr('width', width).attr('height', height);
+
+      // update drawable group
+      svg.select('.drawable')
+        .attr('transform', `translate(${pad_left}, 0)`);
+
+      // update axes
+      svg.select('.x.axis')
+        .attr('transform', `translate(0, ${height - pad_bottom})`)
+        .call(d3.axisBottom(x).ticks(3, '~s'));
+
+      const bar_interval = (height - pad_bottom) / summarized.length;
+
+      const enter_bar = enter => {
+        const g = enter.append('g').attr('class', 'bar');
+        g.append('rect')
+          .attr('x', 0)
+          .attr('height', bar_interval - bar_gap)
+          .style('fill', '#f90')
+          .attr('width', d => x(d[showing_value]))
+          .on('mouseover', function() {
+            d3.select(this).style('fill', '#a60');
+          })
+          .on('mouseout', function() {
+            d3.select(this).style('fill', '#f90');
+          })
+          .on('click', function(_, d) {
+            console.log(d.group);
+          });
+        g.append('text')
+          .text(d => d.group)
+          .style('font-size', '13px')
+          .attr('y', bar_interval - bar_gap - (bar_interval - bar_gap - 13)/2 - 2)
+          .attr('x', -2)
+          .attr('text-anchor', 'end');
+        g.append('text')
+          .attr('class', 'n')
+          .text(d => d3.format(',.2s')(d[showing_value]))
+          .style('font-size', '13px')
+          .attr('y', bar_interval - bar_gap - (bar_interval - bar_gap - 13)/2 - 2)
+          .attr('x', d => x(d[showing_value]))
+        return g;
+      };
+
+      const update_bar = update => {
+        update
+          .select('rect')
+          .attr('width', d => x(d[showing_value]));
+        update
+          .select('.n')
+          .text(d => d3.format(',.2s')(d[showing_value]))
+          .attr('x', d => x(d[showing_value]))
+        return update;
+      };
+
+      // update bars
+      svg.select('.bars')
+        .selectAll('.bar')
+        .data(summarized)
+        .join(enter_bar, update_bar)
+          .attr('transform', (_d, i) => `translate(0, ${i * bar_interval + bar_gap})`)
+
+    });
+  }
+
+  chart.showing_value = _ => {
+    if (arguments.length) return showing_value;
+    showing_value = _;
+    return chart;
+  };
+
+  chart.log_scale = _ => {
+    if (arguments.length) return log_scale;
+    log_scale = _;
     return chart;
   };
 
@@ -278,10 +415,10 @@ const hist_bucketing_buttons = button_group()
 
 
 const bucketing_value_opts = [
-  { label: 'count', bucket_prop: 'count', checked: true },
-  { label: 'sum', bucket_prop: 'sum' },
+  { label: 'count', bucket_prop: 'count' },
+  { label: 'sum', bucket_prop: 'sum', checked: true },
 ];
-let current_bucketing_value = bucketing_value_opts[0];
+let current_bucketing_value = bucketing_value_opts[1];
 const hist_value_buttons = button_group()
   .input_name('histogram-value')
   .on_input(change_to => {
@@ -294,7 +431,7 @@ const hist_value_buttons = button_group()
 
 
 
-let bucketing_y_log = true;
+let bucketing_y_log = false;
 
 
 ///////
@@ -336,13 +473,15 @@ histogram_y_log
   .text('log scale');
 
 
+const link_types = container
+  .append('div')
+  .attr('class', 'link-types');
+
+
 const summary = container
   .append('div')
   .attr('class', 'summary');
 
-// const main_hist = container
-//   .append('div')
-//   .attr('class', 'hist');
 
 
 ////
@@ -355,6 +494,12 @@ function render() {
   histogram_value
     .datum(bucketing_value_opts)
     .call(hist_value_buttons);
+
+  link_types
+    .datum(data)
+    .call(link_types_hbar()
+      .showing_value(current_bucketing_value.bucket_prop)
+      .log_scale(bucketing_y_log));
 
   summary
     .datum(data)
