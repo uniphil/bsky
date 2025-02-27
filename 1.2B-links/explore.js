@@ -362,7 +362,10 @@ const totals = buckets =>
 const commas = d3.format(',');
 
 function buckets_info() {
+  let bucketing = null;
+  let bucketing_value = null;
   function info(selection) {
+    if (!bucketing || !bucketing_value) { throw new Error('must set bucketing and bucketing_value'); }
     selection.each(function(d) {
       let info = d3.select(this).selectAll('.buckets-info').data([d]);
       let info_enter = info.enter().append('div').attr('class', 'buckets-info');
@@ -377,12 +380,22 @@ function buckets_info() {
         .html(`links: <code>${commas(t.sum)}</code><br/>targets: <code>${commas(t.count)}</code>`);
 
       info.selectAll('.info-histo')
-        .datum(bucket(merged, current_bucketing.group))
+        .datum(bucket(merged, bucketing.group))
         .call(hist()
-          .bucketing(current_bucketing)
-          .bucketing_value(current_bucketing_value.bucket_prop)
+          .bucketing(bucketing)
+          .bucketing_value(bucketing_value.bucket_prop)
           .y_log(bucketing_y_log));
     });
+  }
+  info.bucketing = _ => {
+    if (arguments.length) return bucketing;
+    bucketing = _;
+    return info;
+  }
+  info.bucketing_value = _ => {
+    if (arguments.length) return bucketing_value;
+    bucketing_value = _;
+    return info;
   }
   return info;
 }
@@ -437,6 +450,83 @@ function button_group() {
 const filter_links = (links, f) => links.filter(f);
 
 
+function primary_info() {
+  let grouper = null;
+  let bucketing = null;
+  let bucketing_value = null;
+
+  function info(selection) {
+    if (!grouper) { throw new Error('must set grouper'); }
+    selection.each(function(links) {
+      var primary = d3.select(this).selectAll('.primary-info').data([links])
+      const primary_enter = primary.enter().append('div').attr('class', 'primary-info');
+      primary_enter.append('h3');
+      primary_enter.append('div').attr('class', 'primary-info-groups-list');
+      primary = d3.select(this).selectAll('.primary-info');
+
+      const sort_by = bucketing_value.bucket_prop;
+
+      // update name
+      primary.select('h3').text(`By ${grouper.label} (${sort_by})`);
+
+      // data mangling
+      const with_totals = links
+        .map(({ group, links }) =>
+          ({ group, links, totals: totals(merge(links)) }));
+
+      with_totals.sort((a, b) => b.totals[sort_by] - a.totals[sort_by]);
+
+      const group_name = d =>
+        `${d.group} (${d3.format(',.3s')(d.totals[sort_by])})`;
+
+      const enter_group = enter => {
+        const div = enter.append('div').attr('class', 'primary-group');
+        div.append('h4').text(group_name);
+
+        return div;
+      };
+
+      const update_group = update => {
+        update.select('h4').text(group_name);
+        return update;
+      };
+
+      // goooooo
+      primary
+        .select('.primary-info-groups-list')
+        .selectAll('.primary-group')
+        .data(with_totals, d => d.group)
+        .join(enter_group, update_group)
+          .selectAll('.primary-group-buckets-info')
+          .data(d => [d.links])
+          .join('div')
+          .attr('class', 'primary-group-buckets-info')
+          .call(buckets_info()
+            .bucketing(bucketing)
+            .bucketing_value(bucketing_value));
+
+    });
+  }
+  info.grouper = _ => {
+    if (arguments.length) return grouper;
+    grouper = _;
+    return info;
+  };
+  info.bucketing = _ => {
+    if (arguments.length) return bucketing;
+    bucketing = _;
+    return info;
+  };
+  info.bucketing_value = _ => {
+    if (arguments.length) return bucketing_value;
+    bucketing_value = _;
+    return info;
+  };
+  return info;
+}
+
+
+
 /////////////////  STATE  ///////////////
 
 
@@ -482,6 +572,15 @@ const link_type_filter_thing = link_types_hbar().on_set_filter(f => {
 });
 const get_link_type_filter = f => buckets =>
   f.size === 0 || f.has(buckets.link_type);
+
+
+const primary_grouper_opts = [
+  {
+    label: 'collection prefix',
+    group: group_by(buckets => buckets.collection.split('.').slice(0, 2).join('.'))
+  },
+]
+let primary_grouper = primary_grouper_opts[0];
 
 
 //////////////  DOM SETUP  ////////////
@@ -531,6 +630,10 @@ const summary = container
   .append('div')
   .attr('class', 'summary');
 
+const primary_groups = container
+  .append('div')
+  .attr('class', 'primary-groups-blah');
+
 
 
 ///// ///// /////  renderrrrrr  ///// ///// /////
@@ -554,143 +657,17 @@ function render() {
 
   summary
     .datum(link_type_filtered)
-    .call(buckets_info());
+    .call(buckets_info()
+      .bucketing(current_bucketing)
+      .bucketing_value(current_bucketing_value));
+
+  const links_by_primary_grouping = primary_grouper.group(link_type_filtered);
+
+  primary_groups
+    .datum(links_by_primary_grouping)
+    .call(primary_info()
+      .grouper(primary_grouper)
+      .bucketing(current_bucketing)
+      .bucketing_value(current_bucketing_value));
 }
 render();
-
-
-// let bucketed = data.map(link_stats => {
-//   const { collection, link_path, link_type, linking_record_sample } = link_stats;
-//   const buckets = bucket_names.map(bname => parseInt(link_stats[bname], 10));
-//   return { collection, link_path, link_type, linking_record_sample, buckets };
-// });
-
-// const bucket_merge = (buckets_init, buckets_to_merge) =>
-//   (buckets_init || Array.from({ length: bucket_names.length }).map(_ => 0))
-//     .map((init, i) => init + buckets_to_merge[i]);
-
-// const bucket_total_bounds = buckets =>
-//   buckets.reduce((a, b, i) => {
-//     a.lower += i == 0 ? 0 : b * (bucket_sizes[i - 1] + 1);
-//     if (i == bucket_sizes.length - 1) {
-//       a.upper += b * 1048576;
-//       if (b > 0) {
-//         a.upper_inf = true;
-//       }
-//     } else {
-//       a.upper += b * bucket_sizes[i];
-//     }
-//     return a;
-//   }, { lower: 0, upper: 0, upper_inf: false });
-
-// const merge_link_buckets = links =>
-//   links.reduce((a, b) => bucket_merge(a, b.buckets), null)
-
-// const merged = merge_link_buckets(bucketed);
-
-
-// const summary = (name, links, level) => {
-//   let merged_buckets = merge_link_buckets(links);
-//   const bounds = bucket_total_bounds(merged_buckets);
-//   const d = d3.create('div')
-//     .style('display', 'flex')
-//     .style('align-items', 'flex-center')
-//     .style('gap', '1em');
-//   d.append(() => mini_hist(merged_buckets));
-
-//   const info = d.append('div');
-//   info.append(`h${level || 1}`)
-//     .style('margin', '0')
-//     .text(name);
-
-//   const bounds_txt = `backlinks: lower bound: ${bounds.lower.toLocaleString()}; upper: ${bounds.upper_inf ? '>' : ''}${bounds.upper.toLocaleString()}`;
-//   info.append('p')
-//     .style('margin', '0.5em 0')
-//     .text(bounds_txt);
-
-//   return d;
-// }
-
-// const by_collection_prefix = link =>
-//   link.collection.split('.').slice(0, 2).join('.');
-
-// const mini_hist = buckets => {
-//   const width = 320;
-//   const height = 72;
-//   const pad_top = 6;
-//   const pad_bottom = 16;
-//   const pad_left = 36;
-//   const pad_right = 6;
-
-//   const svg = d3
-//     .create('svg')
-//       .attr('width', width)
-//       .attr('height', height);
-
-//   const drawable = svg
-//     .append('g')
-//       .attr('transform', `translate(${pad_left}, ${pad_top})`);
-
-//   const x = d3.scaleLog([.4, 1048576], [0, width - pad_left - pad_right])
-//   const y = d3.scaleLog([1, Math.max.apply(null, buckets)], [height - pad_top - pad_bottom, 0]);
-
-//   drawable.append('g')
-//     .attr('transform', `translate(0, ${height - pad_top - pad_bottom})`)
-//     .call(d3.axisBottom(x));
-
-//   drawable.append('g')
-//     .call(d3.axisLeft(y).ticks(4));
-
-//   drawable.selectAll('rect')
-//     .data(buckets)
-//     .enter()
-//     .append('rect')
-//       .filter(d => d > 0)
-//       .attr('x', 0)
-//       .attr('transform', (d, i) => `translate(${i == 0 ? 0 : x(bucket_sizes[i-1])}, ${y(d)})`)
-//       .attr('width', (_, i) => (i == 0 ? x(1) : (x(bucket_sizes[i]) - x(bucket_sizes[i-1]))) - 1)
-//       .attr('height', d => height - pad_top - pad_bottom - y(d))
-//       .style('fill', '#f90');
-
-//   return svg.node();
-// }
-
-
-// const breakdown = (desc, data, grouper, level) => {
-//   const groups = {};
-//   data.forEach(stat => {
-//     const group_name = grouper(stat);
-//     if (!groups[group_name]) {
-//       groups[group_name] = [];
-//     }
-//     groups[group_name].push(stat);
-//   });
-//   const as_items = [];
-//   Object.keys(groups).forEach(group_name => {
-//     as_items.push({ group_name, buckets: groups[group_name] });
-//   })
-//   as_items.sort((a, b) => {
-//     const a_bounds = bucket_total_bounds(merge_link_buckets(a.buckets));
-//     const b_bounds = bucket_total_bounds(merge_link_buckets(b.buckets));
-//     return (b_bounds.lower + b_bounds.upper) - (a_bounds.lower + a_bounds.upper);
-//   });
-
-//   const container = d3.create('div');
-
-//   container.append(`h${level}`).text(desc);
-
-//   container
-//     .selectAll('div.group')
-//     .data(as_items)
-//     .enter()
-//     .append('div')
-//       .classed('group', true)
-//       .append(({ group_name, buckets }) => summary(group_name, buckets, level+1).node());
-
-//   return container;
-// }
-
-
-// container.append(summary('all links', bucketed, 2).node());
-
-// container.append(breakdown('by nsid prefix', bucketed, by_collection_prefix, 3).node());
