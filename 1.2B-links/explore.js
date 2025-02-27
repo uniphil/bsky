@@ -476,18 +476,15 @@ function primary_info() {
 
       with_totals.sort((a, b) => b.totals[sort_by] - a.totals[sort_by]);
 
-      const group_name = d =>
-        `${d.group} (${d3.format(',.3s')(d.totals[sort_by])})`;
-
       const enter_group = enter => {
         const div = enter.append('div').attr('class', 'primary-group');
-        div.append('h4').text(group_name);
+        div.append('h4').text(d => d.group);
 
         return div;
       };
 
       const update_group = update => {
-        update.select('h4').text(group_name);
+        update.select('h4').text(d => d.group);
         return update;
       };
 
