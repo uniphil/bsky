@@ -574,10 +574,31 @@ const get_link_type_filter = f => buckets =>
 const primary_grouper_opts = [
   {
     label: 'collection prefix',
-    group: group_by(buckets => buckets.collection.split('.').slice(0, 2).join('.'))
+    group: group_by(buckets => buckets.collection.split('.').slice(0, 2).join('.')),
+    checked: true,
+  },
+  {
+    label: 'collection',
+    group: group_by(buckets => buckets.collection),
+  },
+  {
+    label: 'path suffix',
+    group: group_by(buckets => buckets.path.split('.').slice(-2).join('.')),
+  },
+  {
+    label: 'target collection',
+    group: group_by(buckets => buckets.target_collection),
   },
 ]
 let primary_grouper = primary_grouper_opts[0];
+const primary_grouper_buttons = button_group()
+  .input_name('primary-grouper')
+  .on_input(change_to => {
+    primary_grouper_opts.forEach(o => o.checked = false);
+    change_to.checked = true;
+    primary_grouper = change_to;
+    render();
+  })
 
 
 //////////////  DOM SETUP  ////////////
@@ -627,6 +648,11 @@ const summary = container
   .append('div')
   .attr('class', 'summary');
 
+const primary_grouping = container
+  .append('div')
+  .attr('class', 'primary-grouping-buttons');
+primary_grouping.append('p').text('by: ');
+
 const primary_groups = container
   .append('div')
   .attr('class', 'primary-groups-blah');
@@ -657,6 +683,10 @@ function render() {
     .call(buckets_info()
       .bucketing(current_bucketing)
       .bucketing_value(current_bucketing_value));
+
+  primary_groups
+    .datum(primary_grouper_opts)
+    .call(primary_grouper_buttons);
 
   const links_by_primary_grouping = primary_grouper.group(link_type_filtered);
 
