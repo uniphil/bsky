@@ -44,19 +44,22 @@
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        margin-bottom: 2em;
+        margin-bottom: 1em;
       }
       .histogram-controls {
         display: flex;
         align-items: center;
         gap: 1em;
+        margin-bottom: 2em;
       }
-      .histogram-buttons {
+      .histogram-buttons,
+      .pds-browser-controls {
         display: flex;
         align-items: center;
         gap: 0.5em;
       }
-      .histogram-buttons > p {
+      .histogram-buttons > p,
+      .pds-browser-controls > p {
         font-size: 0.8em;
         text-align: right;
       }
@@ -107,6 +110,13 @@
         gap: 0.5em;
         align-items: center;
         margin: 1em 0;
+      }
+
+      .sample.linked {
+        cursor: pointer;
+      }
+      .sample.linked:hover {
+        fill: #59d !important;
       }
 
       .primary-group {

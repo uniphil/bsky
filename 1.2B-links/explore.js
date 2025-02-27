@@ -93,7 +93,6 @@ function bucket(buckets, bucket_groups) {
   return out;
 }
 
-
 function hist() {
   let width = 240,
       height = 72,
@@ -149,7 +148,9 @@ function hist() {
           .attr('transform', (d, i) => `translate(${i == 0 ? 0 : x(d.lower)}, ${y(d[bucketing_value])})`)
           .attr('width', (d, i) => (i == 0 ? x(1) : (x(Math.min(bucketing.x_max, d.upper)) - x(d.lower))) - 0.5)
           .attr('height', d => height - pad_top - pad_bottom - y(d[bucketing_value]))
-          .style('fill', '#f90');
+          .style('fill', '#f90')
+          .classed('sample linked', d => !!d.sample)
+          .on('click', (_, d) => !!d.sample && open_sample(d.sample));
     });
   }
   chart.width = _ => {
@@ -527,12 +528,35 @@ function primary_info() {
 /////////////////  STATE  ///////////////
 
 
+const pds_browser_opts = [
+  { label: '<code>PDSls</code>', checked: true,
+    to_url: s => `https://pdsls.dev/at://${s.did}/${s.collection}/${s.rkey}` },
+  { label: '@tools',
+    to_url: s => `https://atp.tools/at:/${s.did}/${s.collection}/${s.rkey}` },
+  { label: 'atproto browser',
+    to_url: s => `https://atproto-browser.vercel.app/at/${s.did}/${s.collection}/${s.rkey}` },
+];
+let current_pds_browser = pds_browser_opts[0];
+const pds_browser_buttons = button_group()
+  .input_name('histogram-bucketing')
+  .on_input(change_to => {
+    pds_browser_opts.forEach(o => o.checked = false);
+    change_to.checked = true;
+    current_pds_browser = change_to;
+    render();
+  });
+const open_sample = s => {
+  const url = current_pds_browser.to_url(s);
+  window.open(url, '_blank').focus();
+};
+
+
 const bucketing_opts = [
   { label: '2<sup>n</sup>', group: buckets_2_n, x0: 0.5, log: true, x_max: 1048576 },
   { label: '4<sup>n</sup>', group: buckets_4_n, x0: 0.25, log: true, x_max: 1048576, checked: true },
   { label: '1–10+', group: buckets_10, x0: 0, log: false, x_max: 10 },
   { label: 'all', group: buckets_all, x0: 0.4, log: true, x_max: 1048576 },
-]
+];
 let current_bucketing = bucketing_opts[1];
 const hist_bucketing_buttons = button_group()
   .input_name('histogram-bucketing')
@@ -541,7 +565,7 @@ const hist_bucketing_buttons = button_group()
     change_to.checked = true;
     current_bucketing = change_to;
     render();
-  })
+  });
 
 
 const bucketing_value_opts = [
@@ -556,7 +580,7 @@ const hist_value_buttons = button_group()
     change_to.checked = true;
     current_bucketing_value = change_to;
     render();
-  })
+  });
 
 
 let bucketing_y_log = false;
@@ -593,7 +617,7 @@ const primary_grouper_opts = [
     label: 'target collection',
     group: group_by(buckets => buckets.target_collection),
   },
-]
+];
 let primary_grouper = primary_grouper_opts[0];
 const primary_grouper_buttons = button_group()
   .input_name('primary-grouper')
@@ -602,7 +626,7 @@ const primary_grouper_buttons = button_group()
     change_to.checked = true;
     primary_grouper = change_to;
     render();
-  })
+  });
 
 
 //////////////  DOM SETUP  ////////////
@@ -614,8 +638,13 @@ top_controls
   .append('h1')
   .text('1.2 billion links');
 
+const pds_browser_control = top_controls
+  .append('div')
+  .attr('class', 'pds-browser-controls');
+pds_browser_control.append('p').html('open samples in<br/>PDS browser:');
 
-const histogram_controls = top_controls.append('div').attr('class', 'histogram-controls');
+
+const histogram_controls = container.append('div').attr('class', 'histogram-controls');
 
 const histogram_bucketing = histogram_controls
   .append('div')
@@ -674,6 +703,10 @@ const primary_groups = container
 ///// ///// /////  renderrrrrr  ///// ///// /////
 
 function render() {
+  pds_browser_control
+    .datum(pds_browser_opts)
+    .call(pds_browser_buttons);
+
   histogram_bucketing
     .datum(bucketing_opts)
     .call(hist_bucketing_buttons);
