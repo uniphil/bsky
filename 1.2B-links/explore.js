@@ -206,6 +206,18 @@ const collapse_buckets = buckets =>
     return a;
   }, { count: 0, sum: 0, sample: null });
 
+
+
+const apply_filters = (filters, data) => {
+  let filtered = data;
+  filters.forEach(({ group, grouper }) => {
+    filtered = filtered.filter(buckets => grouper.group(buckets) === group);
+  });
+  return filtered;
+};
+
+
+
 function link_types_hbar() {
   const height = 64;
   const width = 192;
@@ -459,6 +471,7 @@ function primary_info() {
   let grouper = null;
   let bucketing = null;
   let bucketing_value = null;
+  let on_add_filter = null;
 
   function info(selection) {
     if (!grouper) { throw new Error('must set grouper'); }
@@ -479,7 +492,11 @@ function primary_info() {
 
       const enter_group = enter => {
         const div = enter.append('div').attr('class', 'primary-group');
-        div.append('h4').text(d => d.group);
+        const controls = div.append('div').attr('class', 'primary-group-controls');
+        controls.append('h4').text(d => d.group);
+        controls.append('button')
+          .on('click', (_, { group }) => on_add_filter({ grouper, group }))
+          .text('+ filter');
 
         return div;
       };
@@ -520,7 +537,37 @@ function primary_info() {
     bucketing_value = _;
     return info;
   };
+  info.on_add_filter = _ => {
+    if (arguments.length) return on_add_filter;
+    on_add_filter = _;
+    return info;
+  };
   return info;
+}
+
+
+function active_filter_indicator() {
+  let on_remove_filter;
+  function indicator(selection) {
+    selection.each(function(d) {
+      let div = d3.select(this).selectAll('.active-filter-indicators').data([[1, 2, 3]]);
+      const div_enter = div.enter().append('div').attr('class', 'active-filter-indicators');
+      div = d3.select(this).selectAll('.active-filter-indicators');
+
+      div
+        .selectAll('button')
+        .data(d)
+        .join('button')
+          .on('click', (_, f) => on_remove_filter(f))
+          .html(({ grouper, group }) => `${grouper.label}: <code>${group}</code> &times;`);
+    });
+  }
+  indicator.on_remove_filter = _ => {
+    if (arguments.length) return on_remove_filter;
+    on_remove_filter = _;
+    return indicator;
+  };
+  return indicator;
 }
 
 
@@ -582,8 +629,20 @@ const hist_value_buttons = button_group()
     render();
   });
 
-
 let bucketing_y_log = false;
+
+
+
+let filters = [];
+const add_filter = filter => {
+  filters.push(filter);
+  render();
+};
+const rm_filter = filter => {
+  filters = filters.filter(f => f !== filter);
+  render();
+}
+
 
 
 let link_type_filter = new Set();
@@ -598,24 +657,24 @@ const get_link_type_filter = f => buckets =>
 const primary_grouper_opts = [
   {
     label: 'collection prefix',
-    group: group_by(buckets => buckets.collection.split('.').slice(0, 2).join('.')),
+    group: buckets => buckets.collection.split('.').slice(0, 2).join('.'),
     checked: true,
   },
   {
     label: 'collection',
-    group: group_by(buckets => buckets.collection),
+    group: buckets => buckets.collection,
   },
   {
     label: 'path suffix',
-    group: group_by(buckets => buckets.path.split('.').slice(-2).join('.')), // this is quite bad
+    group: buckets => buckets.path.split('.').slice(-2).join('.'), // this is quite bad
   },
   {
     label: 'path',
-    group: group_by(buckets => buckets.path),
+    group: buckets => buckets.path,
   },
   {
     label: 'target collection',
-    group: group_by(buckets => buckets.target_collection),
+    group: buckets => buckets.target_collection,
   },
 ];
 let primary_grouper = primary_grouper_opts[0];
@@ -673,6 +732,11 @@ histogram_y_log
   .text('log scale');
 
 
+const active_filters = container
+  .append('div')
+  .attr('class', 'active-filters');
+active_filters.append('p').text('filtering: ');
+
 
 const supersummary = container
   .append('div')
@@ -715,13 +779,22 @@ function render() {
     .datum(bucketing_value_opts)
     .call(hist_value_buttons);
 
+
+  const filtered_data = apply_filters(filters, data);
+
+
   link_types
-    .datum(data)
+    .datum(filtered_data)
     .call(link_type_filter_thing
       .showing_value(current_bucketing_value.bucket_prop)
       .log_scale(bucketing_y_log));
 
-  const link_type_filtered = filter_links(data, get_link_type_filter(link_type_filter));
+  active_filters
+    .datum(filters)
+    .call(active_filter_indicator()
+      .on_remove_filter(rm_filter));
+
+  const link_type_filtered = filter_links(filtered_data, get_link_type_filter(link_type_filter));
 
   summary
     .datum(link_type_filtered)
@@ -733,13 +806,14 @@ function render() {
     .datum(primary_grouper_opts)
     .call(primary_grouper_buttons);
 
-  const links_by_primary_grouping = primary_grouper.group(link_type_filtered);
+  const links_by_primary_grouping = group_by(primary_grouper.group)(link_type_filtered);
 
   primary_groups
     .datum(links_by_primary_grouping)
     .call(primary_info()
       .grouper(primary_grouper)
       .bucketing(current_bucketing)
-      .bucketing_value(current_bucketing_value));
+      .bucketing_value(current_bucketing_value)
+      .on_add_filter(add_filter));
 }
 render();

@@ -69,13 +69,20 @@
         border: 0.5px solid #eee;
         border-width: 0 0.5px;
       }
-      .button-set-item {
-        cursor: pointer;
-        display: block;
-        padding: 0.5em 0.5em 0.3em;
+      button, .button-set-item {
+        background: #fff;
         border: 1px solid #eee;
-        border-width: 1px 0.5px;
         color: #431;
+        cursor: pointer;
+        padding: 0.5em 0.5em 0.3em;
+      }
+      button:hover {
+        background: #ddd;
+        color: #000;
+      }
+      .button-set-item {
+        display: block;
+        border-width: 1px 0.5px;
       }
       .button-set-item.checked {
         background: #fc9;
@@ -105,11 +112,19 @@
         fill: #a60 !important;
       }
 
-      .primary-grouping-buttons {
+      .primary-grouping-buttons,
+      .active-filters {
         display: flex;
         gap: 0.5em;
         align-items: center;
         margin: 1em 0;
+      }
+
+      .active-filters {
+        margin-top: 0;
+      }
+      .active-filters button code {
+        font-size: 0.8em;
       }
 
       .sample.linked {
@@ -126,8 +141,8 @@
         display: flex;
         gap: 1em;
         justify-content: space-between;
-        padding: 0.25em 0.5em 0;
-        width: 32em;
+        padding: 0.25em 0.5em;
+        width: 36em;
       }
       .primary-group:nth-child(2n) {
         background: transparent;
@@ -135,6 +150,8 @@
       .primary-group h4 {
         font-size: 1em;
         font-family: monospace;
+        margin: 0.5em 0;
+        word-break: break-word;
       }
 
     </style>
