@@ -49,6 +49,10 @@ const buckets_10 = [
 
 const data = await d3.json('./1.1B.json');
 
+// hack: pull the source collection into the sample
+data.forEach(d => d.buckets.forEach(b => {
+  if (b.sample) b.sample.collection = d.collection;
+}));
 
 function merge(link_stats) {
   const bucket_merge = (merged, to_merge) =>
@@ -460,14 +464,10 @@ function primary_info() {
     selection.each(function(links) {
       var primary = d3.select(this).selectAll('.primary-info').data([links])
       const primary_enter = primary.enter().append('div').attr('class', 'primary-info');
-      primary_enter.append('h3');
       primary_enter.append('div').attr('class', 'primary-info-groups-list');
       primary = d3.select(this).selectAll('.primary-info');
 
       const sort_by = bucketing_value.bucket_prop;
-
-      // update name
-      primary.select('h3').text(`By ${grouper.label} (${sort_by})`);
 
       // data mangling
       const with_totals = links
@@ -583,7 +583,11 @@ const primary_grouper_opts = [
   },
   {
     label: 'path suffix',
-    group: group_by(buckets => buckets.path.split('.').slice(-2).join('.')),
+    group: group_by(buckets => buckets.path.split('.').slice(-2).join('.')), // this is quite bad
+  },
+  {
+    label: 'path',
+    group: group_by(buckets => buckets.path),
   },
   {
     label: 'target collection',
@@ -640,18 +644,26 @@ histogram_y_log
   .text('log scale');
 
 
-const link_types = container
+
+const supersummary = container
+  .append('div')
+  .attr('class', 'super-summary');
+
+const summary = supersummary
+  .append('div')
+  .attr('class', 'summary');
+
+const link_types = supersummary
   .append('div')
   .attr('class', 'link-types');
 
-const summary = container
-  .append('div')
-  .attr('class', 'summary');
 
 const primary_grouping = container
   .append('div')
   .attr('class', 'primary-grouping-buttons');
 primary_grouping.append('p').text('by: ');
+
+
 
 const primary_groups = container
   .append('div')
@@ -684,7 +696,7 @@ function render() {
       .bucketing(current_bucketing)
       .bucketing_value(current_bucketing_value));
 
-  primary_groups
+  primary_grouping
     .datum(primary_grouper_opts)
     .call(primary_grouper_buttons);
 
