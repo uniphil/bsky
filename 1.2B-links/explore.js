@@ -338,7 +338,10 @@ function link_types_hbar() {
       // update bars
       svg.select('.bars')
         .selectAll('.bar')
-        .data(summarized.map(s => Object.assign(s, {include: filter.has(s.group) || filter.size === 0 })))
+        .data(
+          summarized.map(s => Object.assign(s, {include: filter.has(s.group) || filter.size === 0 })),
+          d => d.group,
+        )
         .join(enter_bar, update_bar)
           .attr('transform', (_d, i) => `translate(0, ${i * bar_interval + bar_gap})`)
 
