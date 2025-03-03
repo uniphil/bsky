@@ -21,6 +21,12 @@ const buckets_2_n = [
   [262144],
   [Infinity],
 ];
+buckets_2_n.div_factors = []; // for log2, adjust the buckets that are actually log4-wide
+buckets_2_n.div_factors[11] = 2;
+buckets_2_n.div_factors[12] = 2;
+buckets_2_n.div_factors[13] = 2;
+buckets_2_n.div_factors[14] = 2;
+buckets_2_n.div_factors[15] = 2;
 const buckets_4_n = [
   [1],
   [2, 3, 4],
@@ -107,6 +113,18 @@ function hist() {
   function chart(selection) {
     if (!bucketing) { throw new Error('must specify bucketing to render histogram'); }
     selection.each(function(buckets) {
+
+      const has_factor = i =>
+        !!(bucketing.group.div_factors && bucketing.group.div_factors[i]);
+
+      const val = (d, i) => {
+        const actual = d[bucketing_value];
+        if (has_factor(i)) {
+          return actual / bucketing.group.div_factors[i];
+        }
+        return actual;
+      }
+
       let svg = d3.select(this).selectAll('svg').data([buckets]);
       const g_enter = svg.enter().append('svg').append('g').attr('class', 'drawable');
       g_enter.append('g').attr('class', 'bars');
@@ -118,8 +136,8 @@ function hist() {
         ? d3.scaleLog([bucketing.x0, bucketing.x_max], [0, width - pad_left - pad_right]).base(16)
         : d3.scaleLinear([bucketing.x0, bucketing.x_max], [0, width - pad_left - pad_right]);
       const y = y_log
-        ? d3.scaleLog([1, Math.max.apply(null, buckets.map(b => b[bucketing_value]))], [height - pad_top - pad_bottom, 0])
-        : d3.scaleLinear([0, Math.max.apply(null, buckets.map(b => b[bucketing_value]))], [height - pad_top - pad_bottom, 0]);
+        ? d3.scaleLog([1, Math.max.apply(null, buckets.map(val))], [height - pad_top - pad_bottom, 0])
+        : d3.scaleLinear([0, Math.max.apply(null, buckets.map(val))], [height - pad_top - pad_bottom, 0]);
 
       // update height/width
       svg.attr('width', width).attr('height', height);
@@ -141,15 +159,16 @@ function hist() {
       // update bars
       svg.select('.bars')
         .selectAll('rect')
-        .data(buckets, d => console.log('d', d) || d.lower)
+        .data(buckets, d => `${d.lower}–${d.upper}`)
         .join('rect')
           .attr('x', 0)
-          .attr('transform', (d, i) => `translate(${i == 0 ? 0 : x(d.lower)}, ${y(d[bucketing_value])})`)
+          .attr('transform', (d, i) => `translate(${i == 0 ? 0 : x(d.lower)}, ${d[bucketing_value] === 0 ? 0 : y(val(d, i))})`)
           .attr('width', (d, i) => (i == 0 ? x(1) : (x(Math.min(bucketing.x_max, d.upper)) - x(d.lower))) - 0.5)
-          .attr('height', d => d === 0
+          .attr('height', (d, i) => d[bucketing_value] === 0
             ? 0 // with log scale i think this sometimes messes up
-            : height - pad_top - pad_bottom - y(d[bucketing_value]))
+            : height - pad_top - pad_bottom - y(val(d, i)))
           .style('fill', '#f90')
+          .classed('adjusted', (_, i) => has_factor(i))
           .classed('sample linked', d => !!d.sample)
           .on('click', (_, d) => !!d.sample && open_sample(d.sample));
     });
