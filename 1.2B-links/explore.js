@@ -141,13 +141,14 @@ function hist() {
       // update bars
       svg.select('.bars')
         .selectAll('rect')
-        .data(buckets)
+        .data(buckets, d => console.log('d', d) || d.lower)
         .join('rect')
-          .filter(d => d[bucketing_value] > 0)
           .attr('x', 0)
           .attr('transform', (d, i) => `translate(${i == 0 ? 0 : x(d.lower)}, ${y(d[bucketing_value])})`)
           .attr('width', (d, i) => (i == 0 ? x(1) : (x(Math.min(bucketing.x_max, d.upper)) - x(d.lower))) - 0.5)
-          .attr('height', d => height - pad_top - pad_bottom - y(d[bucketing_value]))
+          .attr('height', d => d === 0
+            ? 0 // with log scale i think this sometimes messes up
+            : height - pad_top - pad_bottom - y(d[bucketing_value]))
           .style('fill', '#f90')
           .classed('sample linked', d => !!d.sample)
           .on('click', (_, d) => !!d.sample && open_sample(d.sample));
