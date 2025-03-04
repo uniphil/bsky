@@ -1,0 +1,5 @@
+["com.shinolabs.pinksea.oekaki@inresponseTo.uri"]
+notes = "reply post"
+
+["com.shinolabs.pinksea.oekaki@image.imageLink.fullsize"]
+notes = "bsky cdn (hard-coded) link for image"

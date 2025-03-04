@@ -1,0 +1,8 @@
+["blue.maril.stellar.reaction@subject.uri"]
+tags = ["at-uri"]
+
+["blue.maril.stellar.reaction@emoji.repo"]
+tags = ["did"]
+
+["blue.maril.stellar.reaction@authorDid"]
+tags = ["did"]

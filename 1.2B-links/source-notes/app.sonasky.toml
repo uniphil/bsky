@@ -1,0 +1,7 @@
+["app.sonasky.ref@character.refSheet"]
+tags = ["sidecar-ish"]
+notes = "link to bsky post with refsheet, or to a url"
+
+["app.sonasky.ref@character.altRef"]
+tags = ["sidecar-ish"]
+notes = "optional alt refsheet (eg nsfw?)"

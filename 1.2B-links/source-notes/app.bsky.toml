@@ -1,0 +1,143 @@
+name = "bluesky pbc's lexicon"
+
+
+["app.bsky.feed.like@subject.uri"]
+name = "bluesky like"
+tags = ["like"]
+
+
+
+["app.bsky.feed.post@reply.root.uri"]
+name = "bluesky reply root"
+tags = ["reply"]
+
+["app.bsky.feed.post@reply.parent.uri"]
+name = "bluesky reply parent"
+tags = ["reply"]
+
+
+
+["app.bsky.feed.post@embed.record.uri"]
+name = "bluesky quote"
+tags = ["quote"]
+notes = "quote posts without additional media"
+
+["app.bsky.feed.post@embed.record.record.uri"]
+name = "bluesky quote"
+tags = ["quote"]
+notes = "quote posts with also embeds (recordWithMedia)"
+
+
+
+["app.bsky.feed.post@uk.skyblur.post.uri"]
+
+
+["app.bsky.feed.repost@subject.uri"]
+name = "bluesky repost"
+tags = ["repost"]
+
+
+
+["app.bsky.graph.listitem@list"]
+name = "bluesky list member"
+tags = ["list", "same-repo"]
+notes = "backlinks links within (always within??) a repo"
+
+
+["app.bsky.feed.threadgate@post"]
+name = "bluesky post interaction rule"
+tags = ["sidecar", "same-repo", "unnecessary"]
+notes = "must link within a repo to be valid"
+
+["app.bsky.feed.threadgate@hiddenReplies[]"]
+name = "bluesky post hidden replies"
+tags = ["sidecar"]
+
+["app.bsky.feed.threadgate@allow[app.bsky.feed.threadgate#listRule].list"]
+name = "bluesky post interaction allow list"
+tags = ["sidecar"]
+
+["app.bsky.feed.threadgate@allow[].list"]
+name = "bluesky post interaction allow list"
+tags = ["sidecar", "deprecated"]
+became = "app.bsky.feed.threadgate@allow[app.bsky.feed.threadgate#listRule].list"
+notes = "from before putting $type into the path's []"
+
+
+["app.bsky.actor.profile@pinnedPost.uri"]
+name = "bluesky pinned post"
+tags = ["same-repo", "unnecessary"]
+notes = "is this always same-repo? if not it might be slightly interesting. (this would be a bsky appview constraint obviously)"
+
+
+["app.bsky.actor.profile@joinedViaStarterPack.uri"]
+name = "bluesky account signup info"
+tags = ["list"]
+notes = "something people might want to know they can delete"
+
+
+["app.bsky.feed.postgate@post"]
+name = "bluesky post interaction rules"
+tags = ["sidecar", "insufficient"]
+notes = "contains embeddingRules which might change link meaning?"
+
+
+["app.bsky.feed.postgate@detachedEmbeddingUris[]"]
+name = "bluesky indication of detatched post"
+tags = ["sidecar"]
+
+
+["app.bsky.graph.listblock@subject"]
+name = "bluesky blocklist"
+tags = ["block"]
+
+
+["app.bsky.graph.starterpack@list"]
+name = "bluesky starterpack list(?)"
+tags = ["list"]
+
+["app.bsky.graph.starterpack@feeds[].uri"]
+name = "bluesky starterpack feeds"
+tags = ["list"]
+
+
+# DIDs
+
+["app.bsky.graph.follow@subject"]
+name = "bluesky follow"
+tags = ["graph"]
+
+["app.bsky.graph.block@subject"]
+name = "bluesky block"
+tags = ["graph", "block"]
+
+["app.bsky.graph.listitem@subject"]
+name = "bluesky user list"
+tags = ["graph", "list"]
+
+
+# metions mess wheeee
+
+["app.bsky.feed.post@.facets[app.bsky.richtext.facet].features[app.bsky.richtext.facet#mention].did"]
+name = "bluesky user mention in post"
+notes = "vast majority of mentions appear this way"
+
+["app.bsky.feed.post@.facets[].features[app.bsky.richtext.facet#mention].did"]
+name = "bluesky mystery mention"
+notes = """
+  need to figure out exactly what's happening here. it _might_ indicate that $type isn't great to rely on for normalization at all.
+  - first sample is invalid (did:plc:elmc.at) even though it has $type set to mention (inner $type)
+  - most samples have $type on their *first* facet (at least one doesn't have any though)
+
+  """
+
+["app.bsky.feed.post@.facets[].features[].did"]
+tags = ["deprecated"]
+became = ["app.bsky.feed.post@.facets[app.bsky.richtext.facet].features[app.bsky.richtext.facet#mention].did"]
+
+
+["app.bsky.feed.post@.labels.values[].src"]
+# self-label
+
+
+

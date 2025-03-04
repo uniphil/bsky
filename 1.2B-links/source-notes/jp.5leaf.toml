@@ -1,0 +1,11 @@
+["jp.5leaf.sync.mastodon@uri"]
+tags = ["sync", "fedi"]
+notes = "at-uri to the bsky post"
+
+["jp.5leaf.sync.mastodon@root.uri"]
+tags = ["sync", "fedi"]
+notes = "at-uri to root of bsky reply thread"
+
+["jp.5leaf.sync.mastodon@source.url"]
+tags = ["sync", "fedi"]
+notes = "url of corresponding mastodon post"

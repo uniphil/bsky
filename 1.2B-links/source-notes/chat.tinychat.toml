@@ -1,0 +1,13 @@
+["chat.tinychat.core.message@server"]
+notes = "server ref as at-uri"
+
+
+["chat.tinychat.core.message@reply.parent.uri"]
+notes = "chat thread?"
+
+["chat.tinychat.core.message@reply.root.uri"]
+notes = "chat thread?"
+
+["chat.tinychat.core.membership@"]
+notes = "chat room membership? is it self-opt-in?"
+

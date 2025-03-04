@@ -1,0 +1,6 @@
+["lol.atmogus.activity.presences@presences[lol.atmogus.defs.activity#presence].assets.largeImage"]
+notes = "mostly `spotify:` refs that happen to be parsed as URLs"
+
+["lol.atmogus.activity.presences@presences[lol.atmogus.defs.activity#presence].assets.smallImage"]
+notes = "serialized link format to raw.githubusercontent in one case."
+

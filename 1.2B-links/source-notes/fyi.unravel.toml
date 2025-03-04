@@ -1,0 +1,11 @@
+["fyi.unravel.frontpage.vote@subject.uri"]
+tags = ["upvote"]
+
+["fyi.unravel.frontpage.comment@post.uri"]
+notes = "top-level comment"
+
+["fyi.unravel.frontpage.comment@parent.uri"]
+notes = "reply comment"
+
+["fyi.unravel.frontpage.post@url"]
+tags = ["url"]
