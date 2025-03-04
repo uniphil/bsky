@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>A real-world survey of cross-record references in atproto | atproto and bluesky</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="As found by crawling the all firehose records for 1.2 billion AT-URIs, DIDs, and URLs" />
+    <meta property="og:site_name" content="atproto and bluesky" />
+    <meta property="og:title" content="A real-world survey of cross-record references in atproto" />
+    <meta property="og:image" content="https://bsky.bad-example.com/survey-of-atproto-links/share-img-TODO.jpg" />
+    <link rel="canonical" href="https://bsky.bad-example.com/survey-of-atproto-links/" />
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1><a href="../">atproto and bluesky</a></h1>
+      </header>
+      <h1>A real-world survey of cross-record references in atproto</h1>
+      <p>2025-03-04 by <a href="https://bsky.app/profile/bad-example.com" target="_blank" title="bluesky profile: bad-example.com">phil</a> <small>(they/them)</small></p>
+
+      <p><em>post status: draft, in progress, please don't share yet</em></p>
+
+
+      <p>Every social interaction in Bluesky (and atproto generally) is represented as a <em>link</em> from a <strong>record</strong> to some <strong>target</strong>.</p>
+
+      <!-- TODO probably drop this para: -->
+      <p>On the HTTP web, links look like this: <code>&lt;a href="[SOME URL]"&gt;</code>. A link exists on some web page and usually points to another web page by URL. Your browser understands what a link is and allows you to follow it to that other web page. Search engines discover new pages by crawling the web and following links, and also index them in reverse: tracking how many web pages point to a page is a signal for popularity and credibility.</p>
+
+      <p>(todo: i actually think i want to avoid the http link comparison maybe? :/ )</p>
+
+      <p>In HTTP you have HTML which defines the meanings of <em>tags</em> like the <code>&lt;a&gt;</code> anchor tag, so identifying links is easy.</p>
+
+      <p>In contrast, atproto <strong>records</strong> are organized into <strong>collections</strong> which define their own meaning for arbitrary record data via <strong>lexicons</strong>. This flexibility allows lexicon authors to define what a <em>link</em> is for themselves, which is powerful and leaves room for everyone do define links a little bit differently.</p>
+
+      <p>I'm collecting as much information here as I can about how everyone is doing this today. I'm hoping that some conventions will emerge that can become guidance for future lexicon authors, and help lexicon-agnostic tools like <a href="https://constellation.microcosm.blue" target="_blank">constellation</a> more effective and intuitive to use.</p>
+
+
+      <h2>StrongRef</h2>
+
+      <p>Wait, atproto does have a link type! <a href="https://github.com/bluesky-social/atproto/blob/main/lexicons/com/atproto/repo/strongRef.json" target="_blank" title="strongRef lexicon definition"><em>A URI with a content-hash fingerprint.</em></a> A StrongRef is an object with an at-uri and cid, both required. It's widely used:</p>
+
+      <table>
+        <tr>
+          <th>collection</th>
+          <th>key</th>
+          <th>notes</th>
+          <th>lexicon</th>
+        </tr>
+        <tr>
+          <th><code>app.bsky.feed.like</code></th>
+          <td><code>subject</code></td>
+          <td>
+            <details>
+              <summary><code>cid</code> binds likes to post content</summary>
+              <p>If a bluesky post is modified, any likes would become invalidated due to the content changing.</p>
+              <p>Bluesky's appview currently ignores updates to post records anyway, and they may chose a different mechanism to support editable posts when they implement that.</p>
+            </details>
+          </td>
+          <td><a href="https://github.com/bluesky-social/atproto/blob/442fcce30880d03a5f711311be4563f440acec9d/lexicons/app/bsky/feed/like.json#L13"><code>like.json</code></a></td>
+        </tr>
+
+        <tr>
+          <th rowspan="4"><code>app.bsky.feed.post</code></th>
+          <td><code>reply.parent</code></td>
+          <td>direct parent in reply thread</td>
+          <td><a href="https://github.com/bluesky-social/atproto/blob/442fcce30880d03a5f711311be4563f440acec9d/lexicons/app/bsky/feed/post.json#L69"><code>post.json</code></a></td>
+        </tr>
+        <tr>
+          <td><code>reply.root</code></td>
+          <td>root of reply thread</td>
+          <td><a href="https://github.com/bluesky-social/atproto/blob/442fcce30880d03a5f711311be4563f440acec9d/lexicons/app/bsky/feed/post.json#L70"><code>post.json</code></a></td>
+        </tr>
+        <tr>
+          <td><code>embed.record</code></td>
+          <td>quote-posts or other record embed</td>
+          <td><a href="https://github.com/bluesky-social/atproto/blob/442fcce30880d03a5f711311be4563f440acec9d/lexicons/app/bsky/embed/record.json#L10"><code>record.json</code></a></td>
+        </tr>
+        <tr>
+          <td><code>embed.record.record</code></td>
+          <td>quote posts or other embed and also some post media</td>
+          <td><a href="https://github.com/bluesky-social/atproto/blob/442fcce30880d03a5f711311be4563f440acec9d/lexicons/app/bsky/embed/recordWithMedia.json#L10"><code>recordWithMedia.json</code></a></td>
+        </tr>
+
+        <tr>
+          <th><code>app.bsky.feed.repost</code></th>
+          <td><code>subject</code></td>
+          <td></td>
+          <td><a href="https://github.com/bluesky-social/atproto/blob/442fcce30880d03a5f711311be4563f440acec9d/lexicons/app/bsky/feed/repost.json#L13">repost.json</a></td>
+        </tr>
+
+        <tr>
+          <th rowspan="2"><code>app.bsky.actor.profile</code></th>
+          <td><code>joinedViaStarterPack</code></td>
+          <td></td>
+          <td><a href="https://github.com/bluesky-social/atproto/blob/442fcce30880d03a5f711311be4563f440acec9d/lexicons/app/bsky/actor/profile.json#L42">profile.json</a></td>
+        </tr>
+        <tr>
+          <td><code>pinnedPost</code></td>
+          <td></td>
+          <td><a href="https://github.com/bluesky-social/atproto/blob/442fcce30880d03a5f711311be4563f440acec9d/lexicons/app/bsky/actor/profile.json#L46">profile.json</a></td>
+        </tr>
+
+      </table>
+
+      <p>note: there are two kinds of quote-posts in bluesky's lexicon, and the link appears at different positions in each one.</p>
+
+      <p>🌌 note: constellation indexes the <code>at-uri</code> for all StrongRefs, but currently <strong>ignores the <code>cid</code></strong>.</p>
+
+
+      <h2>Bare at-uri</h2>
+
+    </div>
+  </body>
+</html>

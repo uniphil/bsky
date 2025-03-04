@@ -125,3 +125,15 @@ ul.pics img {
 .clear {
   clear: both;
 }
+
+table {
+  border: 0.5px solid #888;
+  border-collapse: collapse;
+  word-break: break-word;
+  max-width: 100%;
+}
+table th,
+table td {
+  border: 0.5px solid #888;
+  padding: 0.2em 0.4em;
+}
